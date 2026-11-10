@@ -1,0 +1,113 @@
+-- CHG-05: SO enters the customer-file header and Booking Details as a saved draft.
+-- This slice creates no approval, signature, document or handover facts.
+grant create on schema public, private to filesdigi_commands;
+
+create function private.valid_booking_draft(p_data jsonb) returns boolean
+language plpgsql immutable set search_path = '' as $$
+declare item record; value text;
+begin
+  if p_data is null or jsonb_typeof(p_data) <> 'object' or octet_length(p_data::text) > 16000 then return false; end if;
+  for item in select * from jsonb_each(p_data) loop
+    if item.key <> all(array['customer_code','booking_number','enquiry_number','booking_date','tl_name','gst_billing','registration_type','customer_name','communication_address','contact_person','pin','model','suffix_1','suffix_2','colour_1','colour_2','interior_colour','special_request']) or jsonb_typeof(item.value) <> 'string' then return false; end if;
+    value := item.value #>> '{}';
+    if length(value) > (case when item.key in ('communication_address','special_request') then 2000 else 200 end) then return false; end if;
+  end loop;
+  if coalesce(p_data->>'gst_billing','') not in ('','yes','no') or coalesce(p_data->>'registration_type','') not in ('','permanent','temporary') then return false; end if;
+  if coalesce(p_data->>'booking_date','') <> '' then
+    if p_data->>'booking_date' !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' then return false; end if;
+    perform (p_data->>'booking_date')::date;
+  end if;
+  return true;
+exception when datetime_field_overflow or invalid_datetime_format then return false;
+end $$;
+
+create table public.bookings (
+  id uuid primary key default gen_random_uuid(),
+  branch_id uuid not null references public.branches,
+  team_id uuid not null,
+  so_id uuid not null references public.staff,
+  so_name text not null,
+  state text not null default 'draft' check(state='draft'),
+  form_version integer not null default 1 check(form_version=1),
+  revision integer not null default 1 check(revision>0),
+  data jsonb not null check(private.valid_booking_draft(data)),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  foreign key(team_id,branch_id) references public.teams(id,branch_id)
+);
+create index bookings_scope on public.bookings(branch_id,team_id,so_id);
+create table public.booking_versions (
+  booking_id uuid not null references public.bookings,
+  revision integer not null,
+  form_version integer not null default 1 check(form_version=1),
+  data jsonb not null check(private.valid_booking_draft(data)),
+  actor_id uuid not null references public.staff,
+  actor_name text not null,
+  recorded_at timestamptz not null default now(),
+  primary key(booking_id,revision)
+);
+
+create function private.can_read_booking(p_branch uuid,p_team uuid,p_so uuid) returns boolean
+language sql stable security definer set search_path = '' as $$
+  select private.is_active() and exists(select 1 from public.memberships m
+    where m.staff_id=auth.uid() and m.active and m.branch_id=p_branch and
+      ((m.role='SO' and p_so=auth.uid() and m.team_id=p_team)
+        or (m.role='TL' and m.team_id=p_team) or m.role='SM'))
+$$;
+create function private.can_read_booking_id(p_booking uuid) returns boolean
+language sql stable security definer set search_path = '' as $$
+  select exists(select 1 from public.bookings b where b.id=p_booking and private.can_read_booking(b.branch_id,b.team_id,b.so_id))
+$$;
+alter table public.bookings enable row level security;
+alter table public.booking_versions enable row level security;
+create policy booking_read on public.bookings for select to authenticated using(private.can_read_booking(branch_id,team_id,so_id));
+create policy booking_version_read on public.booking_versions for select to authenticated using(private.can_read_booking_id(booking_id));
+
+create function public.save_booking_draft(p_operation uuid,p_membership uuid,p_data jsonb,p_confirmed boolean,p_booking uuid default null,p_revision integer default null) returns uuid
+language plpgsql security definer set search_path = '' as $$
+declare scope public.memberships; booking public.bookings; saved private.command_results; request jsonb; actor_name text;
+begin
+  if auth.uid() is null or not private.is_active() then raise exception 'forbidden' using errcode='42501'; end if;
+  -- Lock the active SO scope so revocation cannot race a write under that scope.
+  select * into scope from public.memberships where id=p_membership and staff_id=auth.uid() and role='SO' and active for share;
+  if not found then raise exception 'forbidden' using errcode='42501'; end if;
+  select display_name into actor_name from public.staff where id=auth.uid() and active for share;
+  if not found then raise exception 'forbidden' using errcode='42501'; end if;
+  if p_operation is null or p_confirmed is distinct from true or not private.valid_booking_draft(p_data) or (p_booking is null and p_revision is not null) or (p_booking is not null and (p_revision is null or p_revision<1)) then
+    raise exception 'invalid_input' using errcode='22023';
+  end if;
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(auth.uid()::text||p_operation::text,0));
+  request := jsonb_build_object('command','save_booking_draft','membership',p_membership,'booking',p_booking,'revision',p_revision,'data',p_data,'confirmed',p_confirmed);
+  select * into saved from private.command_results where actor_id=auth.uid() and operation_id=p_operation;
+  if found then
+    if saved.input<>request then raise exception 'operation_reused' using errcode='22023'; end if;
+    return saved.result;
+  end if;
+  if p_booking is null then
+    insert into public.bookings(branch_id,team_id,so_id,so_name,data) values(scope.branch_id,scope.team_id,auth.uid(),actor_name,p_data) returning * into booking;
+  else
+    select * into booking from public.bookings where id=p_booking for update;
+    if not found or booking.so_id<>auth.uid() or booking.branch_id<>scope.branch_id or booking.team_id<>scope.team_id then raise exception 'forbidden' using errcode='42501'; end if;
+    if booking.revision<>p_revision then raise exception 'stale_revision' using errcode='40001'; end if;
+    if booking.state<>'draft' then raise exception 'invalid_transition' using errcode='22023'; end if;
+    update public.bookings set data=p_data,revision=revision+1,updated_at=now() where id=booking.id returning * into booking;
+  end if;
+  insert into public.booking_versions(booking_id,revision,data,actor_id,actor_name) values(booking.id,booking.revision,booking.data,auth.uid(),actor_name);
+  insert into public.audit_events(branch_id,actor_id,action,target_id,revision) values(scope.branch_id,auth.uid(),case when p_booking is null then 'booking.draft_created' else 'booking.draft_updated' end,booking.id,booking.revision);
+  insert into private.command_results values(auth.uid(),p_operation,request,booking.id);
+  return booking.id;
+end $$;
+
+revoke all on public.bookings,public.booking_versions from public,anon,authenticated,service_role;
+grant select on public.bookings,public.booking_versions to authenticated;
+revoke all on function private.valid_booking_draft(jsonb),private.can_read_booking(uuid,uuid,uuid),private.can_read_booking_id(uuid) from public,anon,authenticated,service_role;
+grant execute on function private.can_read_booking(uuid,uuid,uuid),private.can_read_booking_id(uuid) to authenticated;
+revoke all on function public.save_booking_draft(uuid,uuid,jsonb,boolean,uuid,integer) from public,anon,authenticated,service_role;
+grant execute on function public.save_booking_draft(uuid,uuid,jsonb,boolean,uuid,integer) to authenticated;
+alter table public.bookings owner to filesdigi_commands;
+alter table public.booking_versions owner to filesdigi_commands;
+alter function private.valid_booking_draft(jsonb) owner to filesdigi_commands;
+alter function private.can_read_booking(uuid,uuid,uuid) owner to filesdigi_commands;
+alter function private.can_read_booking_id(uuid) owner to filesdigi_commands;
+alter function public.save_booking_draft(uuid,uuid,jsonb,boolean,uuid,integer) owner to filesdigi_commands;
+revoke create on schema public,private from filesdigi_commands;

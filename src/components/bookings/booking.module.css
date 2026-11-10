@@ -1,0 +1,48 @@
+.pageHeader { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; margin-bottom:28px; }
+.pageHeader h1 { margin:8px 0 12px; font-size:clamp(30px,3vw,44px); letter-spacing:-.04em; }
+.pageHeader p { color:var(--muted); margin:0; max-width:700px; }
+.eyebrow { color:var(--muted); font-size:12px; font-weight:650; letter-spacing:.08em; text-transform:uppercase; }
+.action { display:inline-flex; align-items:center; justify-content:center; gap:10px; padding:13px 18px; border-radius:7px; color:white; background:var(--red); font-weight:600; white-space:nowrap; }
+.action svg { width:18px; }
+.back { display:inline-block; color:var(--muted); font-size:14px; margin-bottom:18px; }
+.editor { background:white; border:1px solid var(--line); border-radius:12px; padding:28px; min-width:0; }
+.section { margin-bottom:26px; padding-bottom:22px; border-bottom:1px solid var(--line); min-width:0; }
+.section h2 { font-size:20px; margin:0 0 8px; letter-spacing:-.02em; }
+.section p { margin:0 0 22px; font-size:14px; color:var(--muted); }
+.fields { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px 22px; }
+.fields label { margin:0; font-size:14px; font-weight:550; min-width:0; }
+.fields input, .fields select, .fields textarea { background:#fafbfc; border-color:#d4dbe0; font-size:16px; min-width:0; max-width:100%; }
+.wide { grid-column:1 / -1; }
+.scope { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:22px; margin-bottom:22px; }
+.scope label { font-size:14px; min-width:0; }
+.scope input[readonly] { color:var(--muted); background:#f2f3f4; }
+.confirm { display:flex; align-items:flex-start; gap:12px; font-size:14px; line-height:1.5; font-weight:500; }
+.confirm input { width:20px; height:20px; min-height:20px; margin:1px 0 0; flex-shrink:0; accent-color:var(--red); }
+.note { display:flex; gap:10px; padding:15px 0; font-size:14px; color:var(--muted); line-height:1.6; }
+.note svg { flex-shrink:0; width:18px; margin-top:2px; }
+.status { display:inline-block; background:#f2f3f4; border:1px solid var(--line); border-radius:5px; padding:5px 9px; font-size:12px; font-weight:600; }
+.search { display:flex; align-items:end; gap:12px; margin:0 0 24px; }
+.search label { max-width:480px; flex:1; margin:0; font-size:14px; }
+.search input { font-size:16px; }
+.search button { min-height:46px; }
+.list { background:white; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+.row, .columns { display:grid; grid-template-columns:minmax(110px,.8fr) minmax(150px,1.3fr) minmax(120px,1fr) minmax(110px,.8fr); gap:18px; padding:20px 24px; color:var(--ink); align-items:start; }
+.columns { background:#f4f5f6; font-size:12px; color:var(--muted); font-weight:600; }
+.row { border-top:1px solid var(--line); }
+.row:hover { background:#fafafb; }
+.row strong { display:block; font-weight:650; }
+.row small { display:block; margin-top:6px; color:var(--muted); font-size:13px; }
+.row span, .pageHeader > div { min-width:0; overflow-wrap:anywhere; }
+.empty { padding:44px 24px; text-align:center; }
+.empty svg { color:var(--red); width:30px; height:30px; }
+.empty h2 { font-size:22px; }
+.empty p { color:var(--muted); }
+.pagination { display:flex; gap:24px; align-items:center; margin:20px 0; flex-wrap:wrap; font-size:14px; }
+.history { margin-top:28px; border-top:1px solid var(--line); padding-top:20px; }
+.history h2 { font-size:20px; }
+.history ol { list-style:none; margin:0; padding:0; }
+.history li { padding:14px 0; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; gap:18px; font-size:14px; }
+.history small { color:var(--muted); }
+.saved { padding:12px 16px; background:#edf6f1; color:#24634b; border-radius:6px; margin:0 0 20px; }
+@media(max-width:1200px) { .fields { grid-template-columns:repeat(2,minmax(0,1fr)); } .columns { display:none; } .row { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:620px) { .pageHeader { flex-direction:column; gap:18px; } .editor { padding:20px 16px; } .fields,.scope { grid-template-columns:minmax(0,1fr); gap:18px; } .row { padding:18px 16px; gap:16px; } .search { flex-wrap:wrap; } .search label { flex-basis:100%; } .search button { width:100%; } .history li { flex-direction:column; gap:6px; } }

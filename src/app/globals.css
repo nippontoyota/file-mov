@@ -1,0 +1,49 @@
+:root { --red: #da152b; --ink: #202831; --muted: #58616c; --line: #dce0e4; --paper: #f2f3f4; --green: #24634b; }
+* { box-sizing: border-box; }
+body { margin: 0; color: var(--ink); background: var(--paper); font-family: "Segoe UI", Arial, sans-serif; font-size: 15px; }
+a { color: var(--red); text-underline-offset: 4px; }
+button, input, select, textarea { font: inherit; }
+button, .button { border: 1px solid var(--red); border-radius: 6px; background: var(--red); color: white; padding: .85rem 1.1rem; font-weight: 650; cursor: pointer; }
+button:hover { filter: brightness(.92); }
+button:disabled { opacity: .65; cursor: wait; }
+button.secondary { background: white; color: var(--ink); border-color: var(--line); }
+:focus-visible { outline: 3px solid #266eb0; outline-offset: 4px; }
+label { display: block; font-weight: 600; font-size: .85rem; margin-bottom: 1.1rem; }
+input, select, textarea { width: 100%; min-height: 44px; border: 1px solid #9daeb9; border-radius: 5px; background: white; padding: .75rem; margin-top: .5rem; color: var(--ink); }
+textarea { resize: vertical; }
+fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+h1, h2, h3 { line-height: 1.2; }
+p { line-height: 1.65; }
+.brand { background: white; border-bottom: 1px solid var(--line); padding: 1.25rem max(5vw, calc((100vw - 1160px)/2)); display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.brand a { display: flex; align-items: center; gap: .85rem; color: var(--ink); text-decoration: none; font-size: .85rem; font-weight: 750; letter-spacing: .07em; }
+.brand small { display: block; font-size: .7rem; color: var(--muted); font-weight: 400; letter-spacing: .01em; margin-top: .3rem; }
+.brandMark { background: var(--red); color: white; font-style: italic; font-size: 1.5rem; padding: .35rem .75rem; border-radius: 4px; }
+.environment { color: var(--muted); font-size: .72rem; }
+main { max-width: 1160px; margin: auto; width: 90%; min-height: calc(100vh - 165px); }
+footer { border-top: 1px solid var(--line); padding: 1.5rem 5%; font-size: .72rem; color: var(--muted); display: flex; justify-content: space-between; }
+.eyebrow { text-transform: uppercase; letter-spacing: .14em; font-size: .7rem; color: var(--red); font-weight: 700; }
+.skip { position: absolute; left: -9999px; }
+.skip:focus { left: 1rem; top: 1rem; background: white; padding: 1rem; z-index: 10; }
+.error, .notice { padding: .85rem; border-left: 3px solid var(--red); background: #fff1f2; font-size: .85rem; }
+.success { padding: .85rem; background: #edf6f1; color: var(--green); font-size: .85rem; }
+.narrow { max-width: 480px; margin: 4rem auto; }
+.panel { border: 1px solid var(--line); border-radius: 8px; padding: 1.5rem; background: white; margin: 1.25rem 0; }
+.toolbar { display: flex; align-items: center; gap: 1.5rem; padding: 1.25rem 0; border-bottom: 1px solid var(--line); }
+.toolbar form { margin-left: auto; }
+.pageTitle { margin-top: 2.5rem; }
+.pageTitle h1 { font-size: 2.3rem; letter-spacing: -.04em; }
+.muted { color: var(--muted); }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 1.25rem; }
+.scope { border-top: 3px solid var(--red); }
+.scope strong { font-size: 1.4rem; }
+.pill { display: inline-block; border: 1px solid var(--line); padding: .3rem .6rem; border-radius: 4px; font-size: .75rem; margin-left: .5rem; }
+.empty { padding: 2rem; border: 1px dashed #9daeb9; border-radius: 8px; margin: 2rem 0; }
+.tableWrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .85rem; }
+th, td { text-align: left; padding: .85rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; }
+td small { display: block; margin-top: .3rem; }
+details { padding: 1rem 0; border-bottom: 1px solid var(--line); }
+summary { cursor: pointer; padding: .5rem 0; font-weight: 600; }
+details form { margin-top: 1rem; max-width: 520px; }
+@media (max-width: 650px) { .environment { max-width: 100px; text-align: right; line-height: 1.5; } .toolbar { gap: 1rem; } .toolbar button { padding: .7rem; } footer span { display: none; } .pageTitle h1 { font-size: 1.9rem; } }

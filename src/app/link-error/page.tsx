@@ -1,0 +1,2 @@
+import Link from "next/link";
+export default function LinkError() { return <section className="narrow panel"><h1>This link is unavailable</h1><p>It may have expired, already been used, or no longer have an authorized assignment. Ask your administrator for help, or request a new password reset.</p><Link href="/recover">Reset password</Link><p><Link href="/login">Back to sign in</Link></p></section>; }

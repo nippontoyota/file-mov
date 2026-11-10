@@ -1,0 +1,52 @@
+project_id = "filesdigi"
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+auto_expose_new_tables = false
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+health_timeout = "3m"
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+[realtime]
+enabled = false
+[studio]
+enabled = false
+[local_smtp]
+enabled = true
+port = 54324
+[storage]
+enabled = true
+# Infrastructure limit only; document types and operational size policy await Q-02.
+file_size_limit = "50MiB"
+[storage.s3_protocol]
+enabled = false
+[storage.vector]
+enabled = false
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:3000"
+additional_redirect_urls = ["http://127.0.0.1:3000/auth/confirm", "http://localhost:3000/auth/confirm"]
+enable_signup = false
+enable_anonymous_sign_ins = false
+minimum_password_length = 6
+enable_refresh_token_rotation = true
+[auth.email]
+enabled = true
+enable_confirmations = true
+double_confirm_changes = true
+[auth.email.template.recovery]
+subject = "Reset your FilesDigi password"
+content_path = "./supabase/templates/recovery.html"
+[edge_runtime]
+enabled = false
+[analytics]
+enabled = false
+[experimental]
+stack = true

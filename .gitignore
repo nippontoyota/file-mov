@@ -1,0 +1,15 @@
+node_modules/
+.next/
+out/
+.env*
+!.env.example
+*.tsbuildinfo
+playwright-report/
+test-results/
+supabase/.temp/
+supabase/.branches/
+.local/
+__pycache__/
+# Original customer source stays local; never commit photographed/filled forms.
+file.pdf
+[1-4].jpeg
