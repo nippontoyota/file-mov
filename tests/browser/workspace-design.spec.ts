@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 // T-02 / T-24: role presentation must not expose admin navigation or imply
 // operational capabilities before those workflows exist.
 const roleCases = [
-  ["so2", "Sales Officer", "Booking documents"],
+  ["so2", "Sales Officer", "Amendments"],
   ["tl3", "Team Leader", "Booking reviews"],
   ["sm4", "Sales Manager", "Booking approvals"],
   ["bo5", "Back Office", "Approved files"],

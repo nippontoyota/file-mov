@@ -110,8 +110,8 @@ try {
   check((await security.from("staff_invitations").select("*")).data?.length === 0, "Security cannot access invitation details");
   check(Boolean((await so.rpc("set_membership_active", { p_operation: randomUUID(), p_membership: member(3), p_revision: 1, p_active: false, p_reason: "attack" })).error), "Hostile direct RPC rejected");
   check(Boolean((await so.from("memberships").update({ role: "Admin" }).eq("staff_id", id(2))).error), "HTTP self-escalation rejected");
-  const key = `${randomUUID()}/synthetic.txt`;
-  assert.ifError((await adminAuth.storage.from("booking-documents").upload(key, "synthetic storage fixture", { contentType: "text/plain" })).error);
+  const key = `${randomUUID()}/synthetic.pdf`;
+  assert.ifError((await adminAuth.storage.from("booking-documents").upload(key, "%PDF-1.4\nSynthetic fixture\n%%EOF", { contentType: "application/pdf" })).error);
   try {
     for (const client of [anon, so, admin, security]) {
       check(Boolean((await client.storage.from("booking-documents").download(key)).error), "Unauthorized object download rejected");

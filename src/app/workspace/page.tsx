@@ -42,7 +42,7 @@ export default async function Workspace() {
           {canUseBookings ? <>
             <h2>Booking files</h2><p>{canCreateBooking ? "Enter the file header and booking details, save drafts and continue later." : "View booking drafts in your assigned team or branch."}</p>
             <Link className={styles.primaryLink} href={canCreateBooking ? "/bookings/new" : "/bookings"}>{canCreateBooking ? "New booking" : "View bookings"}<Icon name="arrow" /></Link>
-            <p style={{ marginTop: 20 }}>Submission, approvals and file handover are not enabled yet.</p>
+            <p style={{ marginTop: 20 }}>Registered-owner documents and SO-to-TL file submission are available. Approval steps are not enabled yet.</p>
           </> : <><h2>Booking work is not enabled yet</h2>
           <p>Booking fields, required documents and approval handoffs are awaiting confirmation. Your role’s upcoming tools are listed in the sidebar.</p>
           {isAdmin ? <Link className={styles.primaryLink} href="/staff">Manage staff access<Icon name="arrow" /></Link> : <p>Your active assignment is ready. Contact your branch administrator if your role or team needs a change.</p>}

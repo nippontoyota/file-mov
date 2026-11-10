@@ -1,3 +1,4 @@
+import { createClient } from "@supabase/supabase-js";
 import { Pool } from "pg";
 import { readFileSync } from "node:fs";
 
@@ -26,6 +27,14 @@ export async function installFixtures() {
       const { rows } = await sql.query("select u.id from auth.users u where (u.id::text like 'd3000000-%' or (u.email like '%@example.test' and u.email in (select email from public.staff_invitations where branch_id=any($1::uuid[])))) and not exists(select 1 from public.memberships m where m.staff_id=u.id and m.branch_id<>all($1::uuid[]))", [fixtureBranches]);
       const users = rows.map(row => row.id);
       const fixtureCustomers = (await sql.query("select distinct nullif(btrim(v.data->>'customer_code'),'') customer_id from public.booking_versions v join public.bookings b on b.id=v.booking_id where b.branch_id=any($1::uuid[])", [fixtureBranches])).rows.map(r=>r.customer_id).filter(id=>id && !existingCustomers.has(id));
+      const documentIds=(await sql.query("select d.id from public.booking_documents d join public.bookings b on b.id=d.booking_id where b.branch_id=any($1::uuid[])",[fixtureBranches])).rows.map(d=>d.id);
+      if(documentIds.length){
+        const storage=createClient(process.env.NEXT_PUBLIC_SUPABASE_URL,process.env.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false}});
+        const removed=await storage.storage.from('booking-documents').remove(documentIds);
+        if(removed.error) throw new Error('Fixture file cleanup failed');
+      }
+      await sql.query("delete from public.sales_submissions where booking_id in (select id from public.bookings where branch_id=any($1::uuid[]))",[fixtureBranches]);
+      await sql.query("delete from public.booking_documents where booking_id in (select id from public.bookings where branch_id=any($1::uuid[]))",[fixtureBranches]);
       await sql.query("delete from public.booking_versions where booking_id in (select id from public.bookings where branch_id=any($1::uuid[]))", [fixtureBranches]);
       await sql.query("delete from public.bookings where branch_id=any($1::uuid[])", [fixtureBranches]);
       await sql.query("delete from public.customers c where customer_id=any($1::text[]) and not exists(select 1 from public.bookings b where b.customer_id=c.customer_id) and not exists(select 1 from public.booking_versions v where nullif(btrim(v.data->>'customer_code'),'')=c.customer_id)", [fixtureCustomers]);

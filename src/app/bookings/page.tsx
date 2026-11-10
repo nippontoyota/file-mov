@@ -11,7 +11,7 @@ export default async function Bookings({ searchParams }: { searchParams: Promise
   const q = typeof params.q==='string' ? params.q.trim().slice(0,200) : '';
   const searchBy = params.search_by==='name' ? 'name' : 'customer_id';
   const page = /^\d{1,5}$/.test(params.page || '') ? Math.max(1,Math.min(Number(params.page),10000)) : 1;
-  let query = session.client.from('bookings').select('id,customer_id,data,revision,updated_at,so_name', { count:'exact' }).order('updated_at',{ascending:false}).range((page-1)*50,page*50-1);
+  let query = session.client.from('bookings').select('id,state,customer_id,data,revision,updated_at,so_name', { count:'exact' }).order('updated_at',{ascending:false}).range((page-1)*50,page*50-1);
   if(q) query=searchBy==='customer_id' ? query.eq('customer_id',q) : query.ilike('data->>customer_name',`%${q.replace(/[%_\\]/g,'\\$&')}%`);
   const result = await query;
   if(result.error) throw new Error('Booking list unavailable');
@@ -24,7 +24,7 @@ export default async function Bookings({ searchParams }: { searchParams: Promise
       <div className={styles.columns} aria-hidden="true"><span>Customer ID</span><span>Customer / booking</span><span>Vehicle</span><span>Last saved</span></div>
       {!result.data.length && <div className={styles.empty}><Icon name="folder" /><h2>{q ? 'No matching bookings' : 'No booking files yet'}</h2><p>{q ? 'Check the Customer ID or search by customer name.' : canCreate ? 'Create a file for a confirmed booking to get started.' : 'Booking drafts from your Sales Officers will appear here.'}</p></div>}
       {result.data.map(b=>{const data=bookingData(b.data);return <Link key={b.id} href={`/bookings/${b.id}`} className={styles.row} aria-label={`Open customer ${b.customer_id || 'ID not entered'}, booking ${data.booking_number || b.id.slice(0,8)} for ${data.customer_name || 'unnamed customer'}`}>
-        <span><strong>{b.customer_id || 'Customer ID not entered'}</strong><small>Draft · v{b.revision}</small></span>
+        <span><strong>{b.customer_id || 'Customer ID not entered'}</strong><small>{b.state==='draft'?'Draft':'With TL'} · v{b.revision}</small></span>
         <span><strong>{data.customer_name || 'Customer not entered'}</strong><small>Booking {data.booking_number || 'number not entered'}</small><small>{b.so_name}</small></span>
         <span>{data.model || 'Model not entered'}<small>{[data.suffix_1,data.colour_1].filter(Boolean).join(' / ')}</small></span>
         <span>{new Intl.DateTimeFormat('en-IN',{dateStyle:'medium',timeZone:'Asia/Kolkata'}).format(new Date(b.updated_at))}</span>

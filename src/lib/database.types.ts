@@ -31,16 +31,42 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"booking_versions": {
+                },"booking_documents": {
                   Row: {
-                    "actor_id": string,"actor_name": string,"booking_id": string,"data": NonNullable<Json>,"form_version": number,"recorded_at": string,"revision": number
+                    "booking_id": string,"byte_size": number,"filename": string,"finalized_at": string | null,"id": string,"kind": string,"mime_type": string,"owner_snapshot": NonNullable<Json>,"sha256": string,"status": string,"uploaded_at": string,"uploaded_by": string,"version": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "actor_id": string,"actor_name": string,"booking_id": string,"data": NonNullable<Json>,"form_version"?: number,"recorded_at"?: string,"revision": number
+                    "booking_id": string,"byte_size": number,"filename": string,"finalized_at"?: string | null,"id"?: string,"kind": string,"mime_type": string,"owner_snapshot": NonNullable<Json>,"sha256": string,"status"?: string,"uploaded_at"?: string,"uploaded_by": string,"version": number
                   }
                   Update: {
-                    "actor_id"?: string,"actor_name"?: string,"booking_id"?: string,"data"?: NonNullable<Json>,"form_version"?: number,"recorded_at"?: string,"revision"?: number
+                    "booking_id"?: string,"byte_size"?: number,"filename"?: string,"finalized_at"?: string | null,"id"?: string,"kind"?: string,"mime_type"?: string,"owner_snapshot"?: NonNullable<Json>,"sha256"?: string,"status"?: string,"uploaded_at"?: string,"uploaded_by"?: string,"version"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "booking_documents_booking_id_fkey"
+      columns: ["booking_id"]
+isOneToOne: false
+      referencedRelation: "bookings"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "booking_documents_uploaded_by_fkey"
+      columns: ["uploaded_by"]
+isOneToOne: false
+      referencedRelation: "staff"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"booking_versions": {
+                  Row: {
+                    "actor_id": string,"actor_name": string,"booking_id": string,"data": NonNullable<Json>,"document_ids": (string)[],"form_version": number,"recorded_at": string,"revision": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "actor_id": string,"actor_name": string,"booking_id": string,"data": NonNullable<Json>,"document_ids"?: (string)[],"form_version"?: number,"recorded_at"?: string,"revision": number
+                  }
+                  Update: {
+                    "actor_id"?: string,"actor_name"?: string,"booking_id"?: string,"data"?: NonNullable<Json>,"document_ids"?: (string)[],"form_version"?: number,"recorded_at"?: string,"revision"?: number
                   }
                   Relationships: [
                     {
@@ -155,6 +181,44 @@ isOneToOne: false
       referencedColumns: ["id","branch_id"]
     }
                   ]
+                },"sales_submissions": {
+                  Row: {
+                    "booking_id": string,"file_revision": number,"received_at": string | null,"received_by": string | null,"receiver_name": string | null,"requirements_version": number,"sender_name": string,"sent_at": string,"sent_by": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "booking_id": string,"file_revision": number,"received_at"?: string | null,"received_by"?: string | null,"receiver_name"?: string | null,"requirements_version"?: number,"sender_name": string,"sent_at"?: string,"sent_by": string
+                  }
+                  Update: {
+                    "booking_id"?: string,"file_revision"?: number,"received_at"?: string | null,"received_by"?: string | null,"receiver_name"?: string | null,"requirements_version"?: number,"sender_name"?: string,"sent_at"?: string,"sent_by"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "sales_submissions_booking_id_file_revision_fkey"
+      columns: ["booking_id","file_revision"]
+isOneToOne: false
+      referencedRelation: "booking_versions"
+      referencedColumns: ["booking_id","revision"]
+    },{
+      foreignKeyName: "sales_submissions_booking_id_fkey"
+      columns: ["booking_id"]
+isOneToOne: true
+      referencedRelation: "bookings"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "sales_submissions_received_by_fkey"
+      columns: ["received_by"]
+isOneToOne: false
+      referencedRelation: "staff"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "sales_submissions_sent_by_fkey"
+      columns: ["sent_by"]
+isOneToOne: false
+      referencedRelation: "staff"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"staff": {
                   Row: {
                     "active": boolean,"display_name": string,"id": string
@@ -245,8 +309,23 @@ isOneToOne: false
 "create_staff_team":
 { Args: { "p_branch": string,"p_name": string,"p_operation": string }; Returns: string
                            },
+"finalize_booking_document":
+{ Args: { "p_attestation": string,"p_document": string,"p_revision": number }; Returns: string
+                           },
+"receive_sales_file":
+{ Args: { "p_booking": string,"p_revision": number }; Returns: string
+                           },
+"record_document_download":
+{ Args: { "p_document": string }; Returns: string
+                           },
+"reserve_booking_document":
+{ Args: { "p_booking": string,"p_filename": string,"p_kind": string,"p_mime": string,"p_operation": string,"p_revision": number,"p_sha256": string,"p_size": number }; Returns: string
+                           },
 "save_booking_draft":
 { Args: { "p_booking"?: string,"p_confirmed": boolean,"p_data": Json,"p_membership": string,"p_operation": string,"p_revision"?: number }; Returns: string
+                           },
+"send_booking_to_tl":
+{ Args: { "p_booking": string,"p_operation": string,"p_revision": number }; Returns: string
                            },
 "set_membership_active":
 { Args: { "p_active": boolean,"p_membership": string,"p_operation": string,"p_reason": string,"p_revision": number }; Returns: string

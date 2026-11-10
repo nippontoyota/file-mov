@@ -114,3 +114,8 @@ Go live only after the relevant blockers are resolved, critical scenarios pass, 
 ## 8. Release boundary
 
 CHG-01 authorizes staged local implementation. M1 implements the staff-access foundation and a responsive shell using synthetic data. M2 now persists the SO-owned printed header and Booking Details as drafts under CHG-05. Registered-owner entry, documents, approvals and fulfilment remain unimplemented pending their named inputs. D-25 keeps the booking customer and registered owner separate, and workflow.md records the confirmed section owners. The presence of a requirement here does not claim that the software implements it. Implementation status and executed evidence live in implementation-plan.md. Unresolved questions have named dependencies in decisions.md; resolve each before claiming its feature complete.
+
+
+## CHG-08 implementation acceptance: first digital file handoff
+
+The local M2 slice implements R-03/R-04/R-06 for the user-confirmed SO submission boundary. Incomplete drafts remain allowed. “Send to TL” requires the exact Booking Details fields listed in decisions.md §14 and finalized Aadhaar/PAN copies for the registered owner. The saved form and latest ready document versions travel together as one frozen file revision. Pending uploads, stale owner copies and incomplete fields block sending. The assigned TL can acknowledge receipt; SO edits and document replacement are locked after sending. Receipt, approval and physical-original custody remain distinct. This slice does not implement TL/SM approvals, BO receipt, return/rework, or downstream departmental work, nor does it resolve remaining mandatory signatures.

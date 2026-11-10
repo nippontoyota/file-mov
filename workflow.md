@@ -270,3 +270,12 @@ The workflow PDF supplies the handoff responsibilities; the blank reconstructed 
 **Confirmed Sales handoff:** SO prepares → TL approves → SM approves → TL sends directly to BO. Digital receipt and actual physical-original custody are tracked separately in the intended design. BO coordinates Insurance, Accounts/registration and Accessories. Insurance returns its policy before invoicing; accessory bills follow SO → BO → Accounts; the final physical-file path is Accounts → Security → Accounts/archive. Only the SO draft editor is currently operational, not those handoffs.
 
 The personal cheque/DD responsibility statement has printed SO/TL and SM signature spaces, but its entry owner and evidence/signature gate are still to be confirmed. No signature or finance-risk acceptance is inferred from typing a name.
+
+
+## 11. First digital bundle, confirmed by CHG-08
+
+User evidence on 2026-11-10 adds two explicit supporting documents to SRC-S02: registered-owner Aadhaar and PAN, uploaded as PDF/JPEG, both required for SO submission. If the booking customer differs, these copies belong to the separate registered owner. The exact confirmed submission fields are in decisions.md §14; this is user evidence rather than an assumption from the PDF.
+
+Implemented movement: SO saves Booking Details and registration identity → attaches both private document versions → sends the saved file to the assigned TL team → TL acknowledges digital receipt. The send record points to the immutable form/document bundle and requirements version 1, retaining sender, receiver and timestamps. The SO cannot silently change the submitted bundle. A pending upload is not a document in that bundle. Changing the registered-owner snapshot while still a draft requires matching copies before send.
+
+The subsequent intended route remains TL approval → SM approval → TL sends to BO → BO receipt. Those approvals, applicable signatures and later handoffs are not implemented by this slice. Digital send/receipt does not record physical-original movement, a signature or document verification. Return/rework and absence coverage remain scoped open requirements.

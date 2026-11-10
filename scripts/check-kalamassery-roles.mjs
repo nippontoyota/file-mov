@@ -156,8 +156,7 @@ try {
         await page.goto('http://127.0.0.1:3000/staff');
         if (role === 'Admin') {
           await page.getByRole('heading', { name: 'Staff access', exact: true }).waitFor();
-          const labels = await page.getByLabel('Branch', { exact: true }).locator('option').allTextContents();
-          assert.deepEqual(labels, [results.branch]);
+          assert.equal(await page.getByRole('combobox', { name: 'Branch', exact: true }).inputValue(), results.branch);
           assert.equal(await page.locator('#staff-assignments details').filter({ hasText: 'test<' }).count(), 10);
         } else { await page.waitForURL('**/workspace'); }
         if (device === 'phone') await page.getByRole('button', { name: 'Open navigation' }).click();
@@ -199,9 +198,11 @@ try {
     ['Accounts to Security to Accounts archive', 'Gate pass, delivery, original return and archive receipt'],
   ]) {
     const draftAvailable = flow === 'SO booking file and document preparation' && tables.includes('bookings') && tables.includes('booking_versions');
-    results.workflow.push({ flow, status: draftAvailable ? 'partially_implemented' : 'not_implemented',
-      missing: draftAvailable ? 'Document versions, signatures, original custody and submission gates' : requirement,
-      evidence: draftAvailable ? 'Saved booking drafts and immutable save history are available. Departmental handoffs are not enabled.' : 'No command or enabled screen for this operational stage.' });
+    const documentsAvailable=draftAvailable && tables.includes('booking_documents');
+    const submissionAvailable=flow==='SO to TL review' && tables.includes('sales_submissions');
+    results.workflow.push({ flow, status: draftAvailable || submissionAvailable ? 'partially_implemented' : 'not_implemented',
+      missing: submissionAvailable ? 'TL approval, signatures and return/rework' : documentsAvailable ? 'Signatures and physical-original custody' : draftAvailable ? 'Document versions, signatures, original custody and submission gates' : requirement,
+      evidence: submissionAvailable ? 'Submission schema exists; dedicated document/browser suites exercise send and receipt. This role checker does not execute that journey.' : documentsAvailable ? 'Draft and document schemas exist; dedicated tests exercise their gates. Later departmental handoffs remain unavailable.' : draftAvailable ? 'Saved booking drafts and immutable save history are available.' : 'No command or enabled screen for this operational stage.' });
   }
   results.retained = (await pool.query("select s.display_name,m.role,m.active,b.name branch from public.staff s join public.memberships m on m.staff_id=s.id join public.branches b on b.id=m.branch_id where s.id=any($1::uuid[]) order by m.role", [roles.map(r=>saved.accounts[r].id)])).rows;
   assert.equal(results.retained.length, 10);
