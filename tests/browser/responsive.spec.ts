@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 
+import { selectOption } from "./select-option";
+
 const sizes = [[320,568],[360,800],[390,844],[600,960],[768,1024],[820,1180],[900,700],[901,700],[1024,768],[1280,720],[1920,1080],[2560,1440],[844,390]];
 test("admin forms reflow and navigation survives orientation and breakpoint changes", async ({ page }) => {
   await page.goto("/login");
@@ -62,20 +64,22 @@ test("sales account team choices follow the selected branch and role", async ({ 
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("heading", { name: /^Welcome,/ })).toBeVisible();
   await page.goto("/staff");
-  await page.getByLabel("Role", { exact: true }).selectOption("SO");
+  await selectOption(page,"Role","Sales Officer");
   const team = page.getByLabel("Team", { exact: true });
-  await expect(team.locator("option").filter({ hasText: /^Sales A$/ })).toHaveCount(1);
-  await expect(team.locator("option").filter({ hasText: /^Sales B$/ })).toHaveCount(1);
-  await expect(team.locator("option").filter({ hasText: /^Sales C$/ })).toHaveCount(0);
-  await team.selectOption({ label: "Sales A" });
-  await page.getByLabel("Role", { exact: true }).selectOption("Security");
+  await team.click();
+  await expect(page.getByRole("option",{name:"Sales A",exact:true})).toHaveCount(1);
+  await expect(page.getByRole("option",{name:"Sales B",exact:true})).toHaveCount(1);
+  await expect(page.getByRole("option",{name:"Sales C",exact:true})).toHaveCount(0);
+  await selectOption(page,"Team","Sales A");
+  await selectOption(page,"Role","Security");
   await expect(team).toHaveCount(0);
-  await page.getByLabel("Role", { exact: true }).selectOption("TL");
+  await selectOption(page,"Role","Team Leader");
   await expect(team).toHaveValue("");
   await page.locator("summary").filter({ hasText: "Add a branch team" }).click();
   const name = `Fixture team ${Date.now()}`;
   await page.getByLabel("Team name", { exact: true }).fill(name);
   await page.getByRole("button", { name: "Add team", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "Team added" })).toBeVisible();
-  await expect(team.locator("option").filter({ hasText: name })).toHaveCount(1);
+  await team.fill(name);
+  await expect(page.getByRole("option",{name,exact:true})).toHaveCount(1);
 });

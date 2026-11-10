@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { selectOption } from './select-option';
 import { randomUUID } from 'node:crypto';
 
 test('SO saves and reopens the printed booking section without creating an approval', async ({ page, browser }) => {
@@ -10,10 +11,10 @@ test('SO saves and reopens the printed booking section without creating an appro
   await expect(page.getByRole('heading',{name:'Welcome, Demo SO 2.'})).toBeVisible();
   await page.goto('/bookings/new');
   await expect(page.getByRole('heading',{name:'New booking file',exact:true})).toBeVisible();
-  for(const [label,value] of [['Customer code',`C-${marker}`],['Booking number',`OBF-${marker}`],['Enquiry number',`E-${marker}`],['Date','2026-11-10'],['TL name on file','Synthetic Team Leader'],['Booking customer name',`Booking customer ${marker}`],['Communication address','Synthetic test address'],['Contact person','Synthetic contact'],['PIN','000000'],['Model','Innova HyCross'],['Suffix 1','Preference A'],['Suffix 2','Preference B'],['Colour 1','White'],['Colour 2','Silver'],['Interior colour','Black'],['Special request','Synthetic preference only']]) await page.getByLabel(label,{exact:true}).fill(value);
-  await page.getByLabel('GST billing',{exact:true}).selectOption('yes');
-  await page.getByLabel('Registration type',{exact:true}).selectOption('permanent');
-  await page.getByLabel('This file is for an existing confirmed booking.',{exact:true}).check();
+  for(const [label,value] of [['Customer ID',`C-${marker}`],['Booking number',`OBF-${marker}`],['Enquiry number',`E-${marker}`],['Date','2026-11-10'],['TL name on file','Synthetic Team Leader'],['Booking customer name',`Booking customer ${marker}`],['Communication address','Synthetic test address'],['Contact person','Synthetic contact'],['PIN','000000'],['Model','Innova HyCross'],['Suffix 1','Preference A'],['Suffix 2','Preference B'],['Colour 1','White'],['Colour 2','Silver'],['Interior colour','Black'],['Special request','Synthetic preference only']]) await page.getByLabel(label,{exact:true}).fill(value);
+  await selectOption(page,'GST billing','Yes');
+  await selectOption(page,'Registration type','Permanent');
+  await expect(page.getByLabel('Registration details are the same as booking details',{exact:true})).not.toBeChecked();
   for(const width of [320,390,768,1440]) {
     await page.setViewportSize({width,height:850});
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
@@ -41,9 +42,13 @@ test('SO saves and reopens the printed booking section without creating an appro
   await expect(tabs.getByLabel('Special request',{exact:true})).toHaveValue('Saved revised preference');
   await tabs.close();
   await page.goto('/bookings');
-  await page.getByLabel('Search customer name',{exact:true}).fill(marker);
+  await page.getByLabel('Search value',{exact:true}).fill(`C-${marker}`);
   await page.getByRole('button',{name:'Search',exact:true}).click();
-  await expect(page.getByRole('link',{name:`Open booking OBF-${marker} for Booking customer ${marker}`})).toBeVisible();
+  await expect(page.getByRole('link',{name:`Open customer C-${marker}, booking OBF-${marker} for Booking customer ${marker}`})).toContainText(`C-${marker}`);
+  await selectOption(page,'Search by','Customer name');
+  await page.getByLabel('Search value',{exact:true}).fill(marker);
+  await page.getByRole('button',{name:'Search',exact:true}).click();
+  await expect(page.getByRole('link',{name:`Open customer C-${marker}, booking OBF-${marker} for Booking customer ${marker}`})).toBeVisible();
   const context=await browser.newContext();
   try {
     const tl=await context.newPage();
@@ -69,4 +74,49 @@ test('non-sales users cannot enter booking routes', async ({ page })=>{
   await expect(page).toHaveURL(/\/workspace$/);
   await page.goto('/bookings');
   await expect(page).toHaveURL(/\/workspace$/);
+});
+
+
+test('registration can match the booking or keep a different owner, with searchable vehicle choices', async ({page})=>{
+  await page.goto('/login');
+  await page.getByLabel('Email',{exact:true}).fill('so2@example.test');
+  await page.getByLabel('Password',{exact:true}).fill('Local-demo-only-2026!');
+  await page.getByRole('button',{name:'Sign in',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Welcome, Demo SO 2.'})).toBeVisible();
+  await page.goto('/bookings/new');
+  await page.getByLabel('Booking customer name',{exact:true}).fill('Synthetic booking person');
+  await page.getByLabel('Communication address',{exact:true}).fill('Synthetic booking address');
+  await page.getByLabel('PIN',{exact:true}).fill('000001');
+  const model=page.getByRole('combobox',{name:'Model',exact:true});
+  await model.fill('hycross');
+  await expect(page.getByRole('option',{name:'Innova HyCross',exact:true})).toBeVisible();
+  await model.press('ArrowDown');await model.press('Enter');
+  await expect(model).toHaveValue('Innova HyCross');
+  await selectOption(page,'Colour 1','Platinum White Pearl');
+  await page.getByLabel('Registered owner name',{exact:true}).fill('Different synthetic owner');
+  await page.getByLabel('Registration address',{exact:true}).fill('Different synthetic address');
+  const same=page.getByLabel('Registration details are the same as booking details',{exact:true});
+  await same.check();
+  await expect(page.getByLabel('Registered owner name',{exact:true})).toHaveValue('Synthetic booking person');
+  await expect(page.getByLabel('Registration address',{exact:true})).toHaveValue('Synthetic booking address');
+  await expect(page.getByLabel('Registration model',{exact:true})).toHaveValue('Innova HyCross');
+  await expect(page.getByLabel('Registration colour',{exact:true})).toHaveValue('Platinum White Pearl');
+  await page.getByLabel('Booking customer name',{exact:true}).fill('Updated synthetic person');
+  await expect(page.getByLabel('Registered owner name',{exact:true})).toHaveValue('Updated synthetic person');
+  await same.uncheck();
+  await expect(page.getByLabel('Registered owner name',{exact:true})).toHaveValue('Different synthetic owner');
+  await expect(page.getByLabel('Registration address',{exact:true})).toHaveValue('Different synthetic address');
+  await same.check();
+  await page.getByRole('button',{name:'Save draft',exact:true}).click();
+  await expect(page.getByRole('status')).toContainText('Draft saved');
+  await page.reload();
+  await expect(same).toBeChecked();
+  await expect(page.getByLabel('Registered owner name',{exact:true})).toHaveValue('Updated synthetic person');
+  await same.uncheck();
+  await page.getByLabel('Registered owner name',{exact:true}).fill('Independent synthetic owner');
+  await page.getByRole('button',{name:'Save changes',exact:true}).click();
+  await expect(page.getByText('Draft · v2',{exact:true})).toBeVisible();
+  await page.reload();
+  await expect(same).not.toBeChecked();
+  await expect(page.getByLabel('Registered owner name',{exact:true})).toHaveValue('Independent synthetic owner');
 });

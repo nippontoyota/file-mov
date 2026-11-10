@@ -23,7 +23,7 @@
 .status { display:inline-block; background:#f2f3f4; border:1px solid var(--line); border-radius:5px; padding:5px 9px; font-size:12px; font-weight:600; }
 .search { display:flex; align-items:end; gap:12px; margin:0 0 24px; }
 .search label { max-width:480px; flex:1; margin:0; font-size:14px; }
-.search input { font-size:16px; }
+.search input, .search select { font-size:16px; }
 .search button { min-height:46px; }
 .list { background:white; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
 .row, .columns { display:grid; grid-template-columns:minmax(110px,.8fr) minmax(150px,1.3fr) minmax(120px,1fr) minmax(110px,.8fr); gap:18px; padding:20px 24px; color:var(--ink); align-items:start; }

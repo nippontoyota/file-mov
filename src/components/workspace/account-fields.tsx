@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { SearchSelect } from "@/components/search-select";
 import { roles } from "./roles";
 import { Icon } from "./icon";
 import styles from "./workspace.module.css";
@@ -28,9 +29,9 @@ export function AccountFields({ branches, teams }: { branches: Branch[]; teams: 
       <button type="button" aria-label={visible ? "Hide initial password" : "Show initial password"} aria-pressed={visible} onClick={() => setVisible(value => !value)}><Icon name={visible ? "lock" : "eye"} /></button>
     </div>
     <p className={styles.fieldHint} id="password-hint">6 characters, without spaces. Share directly with the staff member.</p>
-    <label>Branch<select name="branch" aria-label="Branch" required value={branch} onChange={event => setBranch(event.target.value)}>{branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></label>
-    <label>Role<select name="role" aria-label="Role" required value={role} onChange={event => setRole(event.target.value)}>{["SO", "TL", "SM", "BO", "Insurance", "Accounts", "Cashier", "Accessories", "Security"].map(r => <option key={r} value={r}>{roles[r]?.name || r}</option>)}</select></label>
-    {needsTeam && <label>Team<select key={`${branch}-${role}`} name="team" aria-label="Team" required defaultValue=""><option value="" disabled>Select a team</option>{available.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label>}
+    <label>Branch<SearchSelect name="branch" label="Branch" required value={branch} onChange={setBranch} options={branches.map(b=>({value:b.id,label:b.name}))} /></label>
+    <label>Role<SearchSelect name="role" label="Role" required value={role} onChange={setRole} options={["SO", "TL", "SM", "BO", "Insurance", "Accounts", "Cashier", "Accessories", "Security"].map(r=>({value:r,label:roles[r]?.name || r}))} /></label>
+    {needsTeam && <label>Team<SearchSelect key={`${branch}-${role}`} name="team" label="Team" required options={available.map(t=>({value:t.id,label:t.name}))} /></label>}
     {needsTeam && !available.length && <p className="notice">This branch has no teams yet. Add the actual team below before creating a Sales Officer or Team Leader account.</p>}
   </div>;
 }

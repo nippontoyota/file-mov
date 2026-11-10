@@ -248,8 +248,8 @@ The workflow PDF supplies the handoff responsibilities; the blank reconstructed 
 
 | Form section | Entry / responsibility | Review or handoff boundary |
 |---|---|---|
-| Page 1 header and Booking Details | SO | TL then SM review remains required before BO; current editor saves drafts only. |
-| Registration customer information | SO supplies information | BO verifies registration; registered owner may differ from booking customer (D-25). |
+| Page 1 header and Booking Details | SO; Customer ID is the global customer identifier (D-26), distinct from branch order numbers | TL then SM review remains required before BO; current editor saves drafts only. |
+| Registration customer information | SO supplies information; CHG-07 implements the same-details choice and six shared registration fields | BO verifies registration; registered owner may differ from booking customer (D-25). |
 | Finance source / hypothecation | SO enters | BO verifies. |
 | Insurance preferences, nominee and insurance work | Insurance | SO supplies relevant customer information; policy returns to BO before invoicing. |
 | Delivery / delivery-in-charge | SO is delivery-in-charge | Actual-delivery proof and release gates remain Q-10; planned date/time is not proof of delivery. |

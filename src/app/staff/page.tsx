@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { requireAdmin } from "@/modules/identity/session";
 import { changeMembership, createStaffAccount, finishStaffAccount, createStaffTeam } from "@/modules/identity/actions";
+import { SearchSelect } from "@/components/search-select";
 import { AccountFields } from "@/components/workspace/account-fields";
 import { ActionForm } from "@/components/action-form";
 import { WorkspaceShell } from "@/components/workspace/shell";
@@ -43,7 +44,7 @@ export default async function Staff() {
       <details className={styles.addTeam}><summary>Add a branch team<Icon name="chevron" /></summary><p>Use the actual team name. Sales Officers and Team Leaders require a team assignment.</p>
         <ActionForm action={createStaffTeam} label="Add team" secondary>
           <input type="hidden" name="operation" value={randomUUID()} />
-          <label>Team branch<select name="branch" aria-label="Team branch" required>{branches.map(b => <option key={b.branch_id} value={b.branch_id}>{b.branches?.name}</option>)}</select></label>
+          <label>Team branch<SearchSelect name="branch" label="Team branch" required defaultValue={branches[0]?.branch_id} options={branches.map(b=>({value:b.branch_id,label:b.branches?.name || "Branch"}))} /></label>
           <label>Team name<input name="name" required maxLength={100} /></label>
         </ActionForm>
       </details>

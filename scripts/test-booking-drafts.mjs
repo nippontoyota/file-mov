@@ -9,7 +9,8 @@ let checks=0;
 function check(value,label){assert.ok(value,label);checks++;}
 async function login(email){const c=client();assert.ifError((await c.auth.signInWithPassword({email,password:'Local-demo-only-2026!'})).error);return c;}
 const scope='d4000000-0000-0000-0000-000000000002';
-const fields={customer_name:'Synthetic booking customer',booking_number:'SYN-BOOK-01',communication_address:'Synthetic address',model:'Innova HyCross',suffix_1:'Synthetic preference A',suffix_2:'Synthetic preference B',colour_1:'White',colour_2:'Silver',booking_date:'2026-11-10'};
+const customerId=`000-${randomUUID()}`;
+const fields={customer_code:customerId,customer_name:'Synthetic booking customer',booking_number:'SYN-BOOK-01',communication_address:'Synthetic address',model:'Innova HyCross',suffix_1:'Synthetic preference A',suffix_2:'Synthetic preference B',colour_1:'White',colour_2:'Silver',booking_date:'2026-11-10'};
 try {
  const so=await login('so2@example.test');const tl=await login('tl3@example.test');const sm=await login('sm4@example.test');const admin=await login('admin1@example.test');
  const otherSo=await login('so11@example.test');const south=await login('so13@example.test');const bo=await login('bo5@example.test');
@@ -20,7 +21,7 @@ try {
  check((await admin.rpc('save_booking_draft',args)).error?.code==='42501','Admin cannot impersonate SO');
  check((await so.rpc('save_booking_draft',{...args,p_membership:'d4000000-0000-0000-0000-000000000013'})).error?.code==='42501','SO cannot create for another branch or identity');
  check((await so.rpc('save_booking_draft',{...args,p_confirmed:false})).error?.code==='22023','Enquiry-only work is not silently booked');
- for(const invalid of [{approval:'SM approved'}, {customer_name:123}, {customer_name:'x'.repeat(201)}, {booking_date:'2026-02-30'}, {gst_billing:'maybe'}, {registration_type:'other'}, {registration_name:'Unapproved section'}]) {
+ for(const invalid of [{approval:'SM approved'}, {customer_name:123}, {customer_name:'x'.repeat(201)}, {booking_date:'2026-02-30'}, {gst_billing:'maybe'}, {registration_type:'other'}, {insurance_policy:'Unapproved section'}]) {
   check((await so.rpc('save_booking_draft',{...args,p_data:invalid})).error?.code==='22023','Reject malformed data or fields outside this section');
  }
  const concurrent=await Promise.all([so.rpc('save_booking_draft',args),so.rpc('save_booking_draft',args)]);
@@ -37,6 +38,36 @@ try {
  }
  await pool.query("insert into public.memberships(staff_id,branch_id,team_id,role) values('d3000000-0000-0000-0000-000000000011','d1000000-0000-0000-0000-000000000001','d2000000-0000-0000-0000-000000000001','SO')");
  check((await otherSo.from('bookings').select('id').eq('id',id)).data.length===0,'Even another SO in same team cannot read assigned booking');
+ const sameRegistration={...fields,registration_same:'yes',registration_name:fields.customer_name,registration_address:fields.communication_address,registration_pin:'',registration_model:fields.model,registration_suffix:fields.suffix_1,registration_colour:fields.colour_1};
+ const registrationFile=await so.rpc('save_booking_draft',{...args,p_operation:randomUUID(),p_data:sameRegistration});assert.ifError(registrationFile.error);
+ const registered=await so.from('bookings').select('form_version,data').eq('id',registrationFile.data).single();assert.ifError(registered.error);
+ check(registered.data.form_version===2 && registered.data.data.registration_name===fields.customer_name,'Matching registration persisted with v2 form');
+ check((await so.rpc('save_booking_draft',{...args,p_operation:randomUUID(),p_data:{...sameRegistration,registration_name:'Mismatched'}})).error?.code==='22023','Reject forged same-registration identity');
+ check((await so.rpc('save_booking_draft',{...args,p_operation:randomUUID(),p_data:{...sameRegistration,registration_same:'maybe'}})).error?.code==='22023','Reject unknown registration choice');
+ assert.ifError((await so.rpc('save_booking_draft',{...args,p_operation:randomUUID(),p_booking:registrationFile.data,p_revision:1,p_data:{...sameRegistration,registration_same:'no',registration_name:'Different owner'}})).error);
+ const registrationHistory=await so.from('booking_versions').select('data,form_version').eq('booking_id',registrationFile.data).order('revision');assert.ifError(registrationHistory.error);
+ check(registrationHistory.data[0].data.registration_same==='yes' && registrationHistory.data[1].data.registration_name==='Different owner','Registration changes preserve earlier matched snapshot');
+ check((await bo.from('bookings').select('data').eq('id',registrationFile.data)).data.length===0,'Registration choice does not fabricate BO receipt or broaden scope');
+ const southArgs={p_operation:randomUUID(),p_membership:'d4000000-0000-0000-0000-000000000013',p_data:{...fields,customer_name:'Separate branch snapshot'},p_confirmed:true};
+ const southBooking=await south.rpc('save_booking_draft',southArgs);assert.ifError(southBooking.error);
+ check(southBooking.data!==id,'Same order number across branches keeps separate booking files');
+ check((await pool.query('select count(*)::int n from public.customers where customer_id=$1',[customerId])).rows[0].n===1,'Same Customer ID reuses one global customer identity');
+ const scopedCustomerFiles=(await so.from('bookings').select('id').eq('customer_id',customerId)).data;
+ check(scopedCustomerFiles.length===2 && scopedCustomerFiles.every(b=>[id,registrationFile.data].includes(b.id)),'Customer ID search stays scoped across shared identities');
+ check((await south.from('bookings').select('data').eq('id',southBooking.data).single()).data.data.customer_name==='Separate branch snapshot','Shared identity does not overwrite another booking snapshot');
+ check((await so.from('customers').select('customer_id').eq('customer_id',customerId)).data[0].customer_id===customerId,'Customer ID preserves leading zeros');
+ for(const c of [client(),service]) check(Boolean((await c.from('customers').select('customer_id')).error),'Anonymous/service cannot read customer directory');
+ for(const c of [admin,bo,otherSo]) check((await c.from('customers').select('customer_id').eq('customer_id',customerId)).data.length===0,'Customer directory denies unrelated roles and assignments');
+ check(Boolean((await so.from('customers').insert({customer_id:'UNAUTHORIZED'})).error),'No direct customer creation');
+ const shared=`SHARED-${randomUUID()}`;
+ const repeated=await Promise.all([so.rpc('save_booking_draft',{...args,p_operation:randomUUID(),p_data:{...fields,customer_code:shared}}),south.rpc('save_booking_draft',{...southArgs,p_operation:randomUUID(),p_data:{...fields,customer_code:shared}})]);
+ repeated.forEach(r=>assert.ifError(r.error));
+ check((await pool.query('select count(*)::int n from public.customers where customer_id=$1',[shared])).rows[0].n===1,'Concurrent branch saves create one globally unique customer');
+ const replacement=`CORRECTED-${randomUUID()}`;
+ assert.ifError((await so.rpc('save_booking_draft',{...args,p_operation:randomUUID(),p_booking:repeated[0].data,p_revision:1,p_data:{...fields,customer_code:replacement}})).error);
+ check((await so.from('booking_versions').select('data').eq('booking_id',repeated[0].data).eq('revision',1).single()).data.data.customer_code===shared,'Draft ID correction preserves previous customer reference in history');
+ check((await south.from('bookings').select('customer_id').eq('id',repeated[1].data).single()).data.customer_id===shared,'Correction never rekeys another branch booking');
+ check((await south.from('customers').select('customer_id').eq('customer_id',replacement)).data.length===0,'Customer IDs existing only in another branch remain hidden');
  const edit={...args,p_operation:randomUUID(),p_booking:id,p_revision:1,p_data:{...fields,special_request:'Synthetic change'}};
  check((await tl.rpc('save_booking_draft',edit)).error?.code==='42501','TL cannot edit an SO draft');
  check((await sm.rpc('save_booking_draft',edit)).error?.code==='42501','SM cannot edit an SO draft');
@@ -60,8 +91,9 @@ try {
   await sql.query('set local role authenticated');
   await sql.query("select set_config('request.jwt.claim.sub','d3000000-0000-0000-0000-000000000002',true)");
   await sql.query('savepoint attempted');
-  await assert.rejects(sql.query('select public.save_booking_draft($1,$2,$3,true,$4,3)',[randomUUID(),scope,JSON.stringify({customer_name:'Must roll back'}),id]),e=>e.code==='P0001');checks++;
+  await assert.rejects(sql.query('select public.save_booking_draft($1,$2,$3,true,$4,3)',[randomUUID(),scope,JSON.stringify({customer_name:'Must roll back',customer_code:'ROLLBACK-CUSTOMER'}),id]),e=>e.code==='P0001');checks++;
   await sql.query('rollback to savepoint attempted');await sql.query('reset role');
+  check((await sql.query("select count(*)::int n from public.customers where customer_id='ROLLBACK-CUSTOMER'")).rows[0].n===0,'Audit failure rolls back customer identity creation');
   check((await sql.query('select revision from public.bookings where id=$1',[id])).rows[0].revision===3,'History failure rolls back draft update');
   check((await sql.query('select count(*)::int n from public.booking_versions where booking_id=$1',[id])).rows[0].n===3,'History failure rolls back version insertion');
  }finally{await sql.query('rollback');sql.release();}

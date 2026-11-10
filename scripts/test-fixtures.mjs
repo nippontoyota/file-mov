@@ -9,6 +9,7 @@ export async function installFixtures() {
   }
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   const sql = await pool.connect();
+  const existingCustomers = new Set((await sql.query('select customer_id from public.customers')).rows.map(r=>r.customer_id));
   const fixtureBranches = ['d1000000-0000-0000-0000-000000000001','d1000000-0000-0000-0000-000000000002'];
   try {
     const { rows: [lock] } = await sql.query("select pg_try_advisory_lock(1729348) as acquired");
@@ -24,8 +25,10 @@ export async function installFixtures() {
       await sql.query("begin");
       const { rows } = await sql.query("select u.id from auth.users u where (u.id::text like 'd3000000-%' or (u.email like '%@example.test' and u.email in (select email from public.staff_invitations where branch_id=any($1::uuid[])))) and not exists(select 1 from public.memberships m where m.staff_id=u.id and m.branch_id<>all($1::uuid[]))", [fixtureBranches]);
       const users = rows.map(row => row.id);
+      const fixtureCustomers = (await sql.query("select distinct nullif(btrim(v.data->>'customer_code'),'') customer_id from public.booking_versions v join public.bookings b on b.id=v.booking_id where b.branch_id=any($1::uuid[])", [fixtureBranches])).rows.map(r=>r.customer_id).filter(id=>id && !existingCustomers.has(id));
       await sql.query("delete from public.booking_versions where booking_id in (select id from public.bookings where branch_id=any($1::uuid[]))", [fixtureBranches]);
       await sql.query("delete from public.bookings where branch_id=any($1::uuid[])", [fixtureBranches]);
+      await sql.query("delete from public.customers c where customer_id=any($1::text[]) and not exists(select 1 from public.bookings b where b.customer_id=c.customer_id) and not exists(select 1 from public.booking_versions v where nullif(btrim(v.data->>'customer_code'),'')=c.customer_id)", [fixtureCustomers]);
       await sql.query("delete from private.command_results where actor_id=any($1::uuid[])", [users]);
       await sql.query("delete from public.audit_events where branch_id=any($1::uuid[])", [fixtureBranches]);
       await sql.query("delete from public.staff_invitations where branch_id=any($1::uuid[])", [fixtureBranches]);

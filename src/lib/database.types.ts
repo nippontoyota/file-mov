@@ -59,14 +59,14 @@ isOneToOne: false
                   ]
                 },"bookings": {
                   Row: {
-                    "branch_id": string,"created_at": string,"data": NonNullable<Json>,"form_version": number,"id": string,"revision": number,"so_id": string,"so_name": string,"state": string,"team_id": string,"updated_at": string
+                    "branch_id": string,"created_at": string,"customer_id": string | null,"data": NonNullable<Json>,"form_version": number,"id": string,"revision": number,"so_id": string,"so_name": string,"state": string,"team_id": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "branch_id": string,"created_at"?: string,"data": NonNullable<Json>,"form_version"?: number,"id"?: string,"revision"?: number,"so_id": string,"so_name": string,"state"?: string,"team_id": string,"updated_at"?: string
+                    "branch_id": string,"created_at"?: string,"customer_id"?: string | null,"data": NonNullable<Json>,"form_version"?: number,"id"?: string,"revision"?: number,"so_id": string,"so_name": string,"state"?: string,"team_id": string,"updated_at"?: string
                   }
                   Update: {
-                    "branch_id"?: string,"created_at"?: string,"data"?: NonNullable<Json>,"form_version"?: number,"id"?: string,"revision"?: number,"so_id"?: string,"so_name"?: string,"state"?: string,"team_id"?: string,"updated_at"?: string
+                    "branch_id"?: string,"created_at"?: string,"customer_id"?: string | null,"data"?: NonNullable<Json>,"form_version"?: number,"id"?: string,"revision"?: number,"so_id"?: string,"so_name"?: string,"state"?: string,"team_id"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -75,6 +75,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "branches"
       referencedColumns: ["id"]
+    },{
+      foreignKeyName: "bookings_customer_id_fkey"
+      columns: ["customer_id"]
+isOneToOne: false
+      referencedRelation: "customers"
+      referencedColumns: ["customer_id"]
     },{
       foreignKeyName: "bookings_so_id_fkey"
       columns: ["so_id"]
@@ -99,6 +105,20 @@ isOneToOne: false
                   }
                   Update: {
                     "id"?: string,"name"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"customers": {
+                  Row: {
+                    "customer_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "customer_id": string
+                  }
+                  Update: {
+                    "customer_id"?: string
                   }
                   Relationships: [
                     

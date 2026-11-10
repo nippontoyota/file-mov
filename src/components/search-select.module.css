@@ -1,0 +1,9 @@
+.root { position:relative; min-width:0; width:100%; font-weight:400; }
+.control { position:relative; }
+.control input { padding-right:40px; font-size:16px; min-width:0; }
+.control .toggle { position:absolute; top:8px; right:0; height:calc(100% - 8px); width:38px; padding:0; border:0; background:transparent; color:var(--muted); font-size:22px; border-radius:0 5px 5px 0; }
+.options { position:absolute; z-index:40; top:100%; left:0; right:0; max-height:min(240px,40vh); overflow:auto; overscroll-behavior:contain; border:1px solid var(--line); border-radius:6px; background:white; box-shadow:0 8px 20px #20283118; margin-top:4px; }
+.option { padding:12px; min-height:44px; font-size:15px; line-height:1.4; overflow-wrap:anywhere; cursor:pointer; }
+.option:hover,.option[data-active=true] { background:#f3f4f5; }
+.option[aria-selected=true] { background:#fce9ec; color:#b70d21; }
+.empty { padding:12px; margin:0; font-size:14px; color:var(--muted); }

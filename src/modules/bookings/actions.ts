@@ -13,8 +13,9 @@ export async function saveBooking(_: ActionState, form: FormData): Promise<Actio
   const id = textField(form, 'booking', 36);
   const revision = Number(form.get('revision'));
   if (!uuid.test(operation) || !uuid.test(membership) || (id && (!uuid.test(id) || !Number.isSafeInteger(revision) || revision<1))) return { error: 'Refresh and select your current Sales Officer assignment.' };
-  if (form.get('confirmed') !== 'yes') return { error: 'Confirm that this file is for an existing confirmed booking.' };
-  const data: BookingData = {};
+  const same=form.get('registration_same');
+  if(same!=='yes' && same!=='no') return {error:'Choose whether registration details match the booking.'};
+  const data: BookingData = {registration_same:same};
   for (const field of bookingFields) {
     const value = form.get(field.key);
     const max = 'type' in field && field.type==='textarea' ? 2000 : 200;

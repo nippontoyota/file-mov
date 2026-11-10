@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { selectOption } from "./select-option";
 import { randomUUID } from "node:crypto";
 
 async function openNavigation(page: Page) {
@@ -49,7 +50,7 @@ test("admin creates a staff login with preset password and can revoke access", a
   await page.getByRole("button", { name: "Show initial password" }).click();
   await expect(page.getByLabel("Initial password", { exact: true })).toHaveAttribute("type", "text");
   await page.getByRole("button", { name: "Hide initial password" }).click();
-  await page.getByLabel("Role", { exact: true }).selectOption("BO");
+  await selectOption(page,"Role","Back Office");
   await page.getByRole("button", { name: "Create staff account", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "Staff account created" })).toBeVisible();
   const context = await browser.newContext();
