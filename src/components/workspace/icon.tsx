@@ -28,6 +28,8 @@ const paths = {
   upi: "M17 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2ZM12 18h.01M9 6h6M9 9h6",
   cheque: "M3 5h18v14H3ZM3 10h18M7 15h6M16 15h2",
   cash: "M2 6h20v12H2ZM6 12a6 6 0 0 1 12 0M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z",
+  alert: "m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3ZM12 9v4M12 17h.01",
+  check: "M20 6 9 17l-5-5",
 } as const;
 export type IconName = keyof typeof paths;
 export function Icon({ name, ...props }: SVGProps<SVGSVGElement> & { name: IconName }) {

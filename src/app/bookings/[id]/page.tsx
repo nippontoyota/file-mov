@@ -103,7 +103,7 @@ export default async function Booking({params,searchParams}:{params:Promise<{id:
           <ActionForm action={recordPayment} label="Record Booking Advance">
             <input type="hidden" name="operation" value={randomUUID()} />
             <input type="hidden" name="booking" value={id} />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '14px', marginBottom: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '14px', marginBottom: '12px' }}>
               <label style={{ fontSize: '13px', fontWeight: 550 }}>Payment Mode
                 <select name="method" required style={{ display: 'block', width: '100%', marginTop: '4px', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--line)' }}>
                   <option value="card">Card (POS Terminal)</option>
@@ -118,6 +118,9 @@ export default async function Booking({params,searchParams}:{params:Promise<{id:
               <label style={{ fontSize: '13px', fontWeight: 550 }}>Reference / UTR / Cheque No
                 <input name="reference" required placeholder="e.g. UTR-982189 / CHQ-0021" maxLength={100} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--line)' }} />
               </label>
+              <label style={{ fontSize: '13px', fontWeight: 550 }}>Payment Proof Slip (Optional PDF or JPEG)
+                <input name="proof_file" type="file" accept="application/pdf,image/jpeg,.pdf,.jpg,.jpeg" style={{ display: 'block', width: '100%', marginTop: '4px', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--line)' }} />
+              </label>
             </div>
           </ActionForm>
         </div>
@@ -127,7 +130,22 @@ export default async function Booking({params,searchParams}:{params:Promise<{id:
     </section>
     
     <section className={styles.handoff}><h2>{sectionTitle}</h2>
-      {editable && <><p>Save your changes first. Send the saved details and attached documents together. The file will become read-only for the SO.</p><p>{missing.length ? `Required booking details still missing: ${missing.join(', ')}.` : 'Required booking details are complete.'} Both current registered-owner documents must be attached.</p><ActionForm action={sendToTL} label="Send to TL"><input type="hidden" name="operation" value={randomUUID()}/><input type="hidden" name="booking" value={id}/><input type="hidden" name="revision" value={b.revision}/></ActionForm></>}
+      {editable && (
+        <>
+          <p>Save your changes first. Send the saved details and attached documents together. The file will become read-only for the SO.</p>
+          <p>{missing.length ? `Required booking details still missing: ${missing.join(', ')}.` : 'Required booking details are complete.'} Both current registered-owner documents must be attached.</p>
+          {payment && payment.status !== 'verified' && (
+            <div style={{ padding: '12px 14px', background: '#fff7ed', border: '1px solid #ffedd5', borderRadius: '6px', marginBottom: '14px', fontSize: '13px', color: '#9a3412', fontWeight: 550 }}>
+              Booking advance payment of ₹{Number(payment.amount).toLocaleString('en-IN')} is awaiting Cashier receipt verification before the file can be sent to the Team Leader.
+            </div>
+          )}
+          <ActionForm action={sendToTL} label="Send to TL">
+            <input type="hidden" name="operation" value={randomUUID()}/>
+            <input type="hidden" name="booking" value={id}/>
+            <input type="hidden" name="revision" value={b.revision}/>
+          </ActionForm>
+        </>
+      )}
       {submission.data && <><p>File version {submission.data.file_revision} sent by {submission.data.sender_name} to {b.teams?.name || 'the assigned team'} TL on {new Date(submission.data.sent_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})}.</p>
         <p>{submission.data.received_at ? `TL receipt recorded by ${submission.data.receiver_name} on ${new Date(submission.data.received_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})}.` : 'Awaiting TL receipt.'}</p>
         {canReceive && <ActionForm action={receiveFile} label="Acknowledge file receipt"><input type="hidden" name="booking" value={id}/><input type="hidden" name="revision" value={b.revision}/></ActionForm>}

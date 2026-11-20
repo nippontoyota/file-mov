@@ -66,7 +66,7 @@ export default async function CashierPage({ searchParams }: { searchParams: Prom
             return (
               <Link
                 key={m.key}
-                href={isActive ? '/cashier' : `/cashier?method=${m.key}`}
+                href={isActive ? '/cashier#queue' : `/cashier?method=${m.key}#queue`}
                 className={`${styles.card} ${styles[`card_${m.key}`]} ${isActive ? styles.cardActive : ''}`}
                 aria-label={`${m.label}: ${data.pendingCount} pending verification`}
               >
@@ -114,7 +114,7 @@ export default async function CashierPage({ searchParams }: { searchParams: Prom
         </div>
 
         {/* Transactions Table */}
-        <h3 className={styles.sectionTitle}>
+        <h3 id="queue" className={styles.sectionTitle}>
           {activeMethod ? `${methods.find(m => m.key === activeMethod)?.label} Transactions` : 'All Showroom Booking Collections'}
         </h3>
 
@@ -178,27 +178,65 @@ export default async function CashierPage({ searchParams }: { searchParams: Prom
                     </div>
                   ) : (
                     <div>
-                      <div style={{ marginBottom: '8px' }}>
-                        {hasProof ? (
-                          <a href={`/api/booking-documents/${pay.proof_document_id}`} target="_blank" rel="noreferrer" className={styles.proofLink}>
-                            View customer payment slip
-                          </a>
-                        ) : (
-                          <span className={styles.proofMissing}>Physical proof required</span>
-                        )}
-                      </div>
+                      {hasProof ? (
+                        <>
+                          <div style={{ marginBottom: '6px' }}>
+                            <span className={styles.proofAttachedBadge}>
+                              <Icon name="check" /> Slip Attached
+                            </span>
+                          </div>
+                          <div style={{ marginBottom: '8px' }}>
+                            <a href={`/api/booking-documents/${pay.proof_document_id}`} target="_blank" rel="noreferrer" className={styles.proofLink}>
+                              View customer payment slip
+                            </a>
+                          </div>
 
-                      <ActionForm action={verifyPayment} label={hasProof ? 'Confirm & Issue Receipt' : 'Attach Proof & Confirm'}>
-                        <input type="hidden" name="operation" value={randomUUID()} />
-                        <input type="hidden" name="payment_id" value={pay.id} />
-                        <input
-                          name="receipt_no"
-                          required
-                          placeholder="Receipt No (e.g. RCP-00821)"
-                          className={styles.receiptInput}
-                          maxLength={50}
-                        />
-                      </ActionForm>
+                          <ActionForm action={verifyPayment} label="Confirm & Issue Receipt">
+                            <input type="hidden" name="operation" value={randomUUID()} />
+                            <input type="hidden" name="payment_id" value={pay.id} />
+                            <input
+                              name="receipt_no"
+                              required
+                              placeholder="Receipt No (e.g. RCP-00821)"
+                              className={styles.receiptInput}
+                              maxLength={50}
+                            />
+                          </ActionForm>
+                        </>
+                      ) : (
+                        <>
+                          <div style={{ marginBottom: '6px' }}>
+                            <span className={styles.proofMissingBadge}>
+                              <Icon name="alert" /> Proof Missing
+                            </span>
+                          </div>
+                          <p className={styles.instructionText}>
+                            Proof required before approval. Attach counter slip:
+                          </p>
+
+                          <ActionForm action={verifyPayment} label="Attach Proof & Confirm">
+                            <input type="hidden" name="operation" value={randomUUID()} />
+                            <input type="hidden" name="payment_id" value={pay.id} />
+                            <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: '2px' }}>
+                              Counter Slip (PDF or JPEG)
+                              <input
+                                type="file"
+                                name="proof_file"
+                                required
+                                accept="application/pdf,image/jpeg,.pdf,.jpg,.jpeg"
+                                className={styles.fileInput}
+                              />
+                            </label>
+                            <input
+                              name="receipt_no"
+                              required
+                              placeholder="Receipt No (e.g. RCP-00821)"
+                              className={styles.receiptInput}
+                              maxLength={50}
+                            />
+                          </ActionForm>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
