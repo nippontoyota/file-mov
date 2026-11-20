@@ -39,3 +39,35 @@ export const registrationCopies = {
   registration_name: 'customer_name', registration_address: 'communication_address', registration_pin: 'pin',
   registration_model: 'model', registration_suffix: 'suffix_1', registration_colour: 'colour_1',
 } as const;
+
+export function generateSampleBookingData(): BookingData {
+  const uniqueId = Math.floor(10000 + Math.random() * 90000);
+  const today = new Date().toISOString().slice(0, 10);
+  return {
+    customer_code: `CUST-${uniqueId}`,
+    booking_number: `BK-KL07-${uniqueId}`,
+    enquiry_number: `ENQ-NT-${uniqueId}`,
+    booking_date: today,
+    tl_name: 'Suresh Kumar',
+    gst_billing: 'no',
+    registration_type: 'permanent',
+    customer_name: 'Rahul Menon',
+    communication_address: 'Flat 4B, Skyline Apts, Edappally, Kochi',
+    contact_person: 'Rahul Menon',
+    pin: '682024',
+    model: 'Innova HyCross',
+    suffix_1: 'ZX',
+    suffix_2: '',
+    colour_1: 'Blackish Ageha',
+    colour_2: '',
+    interior_colour: 'Dark Chestnut',
+    special_request: 'Floor mats and mud flaps requested at delivery.',
+    registration_same: 'yes',
+    registration_name: 'Rahul Menon',
+    registration_address: 'Flat 4B, Skyline Apts, Edappally, Kochi',
+    registration_pin: '682024',
+    registration_model: 'Innova HyCross',
+    registration_suffix: 'ZX',
+    registration_colour: 'Blackish Ageha',
+  };
+}

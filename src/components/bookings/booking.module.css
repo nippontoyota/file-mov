@@ -4,6 +4,9 @@
 .eyebrow { color:var(--muted); font-size:12px; font-weight:650; letter-spacing:.08em; text-transform:uppercase; }
 .action { display:inline-flex; align-items:center; justify-content:center; gap:10px; padding:13px 18px; border-radius:7px; color:white; background:var(--red); font-weight:600; white-space:nowrap; }
 .action svg { width:18px; }
+.actionsGroup { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.secondaryAction { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:12px 18px; border-radius:7px; color:var(--ink); background:white; border:1px solid var(--line); font-weight:600; font-size:14px; white-space:nowrap; text-decoration:none; cursor:pointer; }
+.secondaryAction:hover { background:#f4f5f6; }
 .back { display:inline-block; color:var(--muted); font-size:14px; margin-bottom:18px; }
 .editor { background:white; border:1px solid var(--line); border-radius:12px; padding:28px; min-width:0; }
 .section { margin-bottom:26px; padding-bottom:22px; border-bottom:1px solid var(--line); min-width:0; }

@@ -1,9 +1,12 @@
+import { randomUUID } from 'node:crypto';
 import Link from 'next/link';
 import { requireSales } from '@/modules/bookings/session';
 import { bookingData } from '@/modules/bookings/fields';
 import { WorkspaceShell } from '@/components/workspace/shell';
 import { SearchSelect } from '@/components/search-select';
 import { Icon } from '@/components/workspace/icon';
+import { ActionForm } from '@/components/action-form';
+import { createTestBooking } from '@/modules/bookings/actions';
 import styles from '@/components/bookings/booking.module.css';
 export default async function Bookings({ searchParams }: { searchParams: Promise<{ q?: string; page?: string; search_by?: string }> }) {
   const session = await requireSales();
@@ -23,7 +26,15 @@ export default async function Bookings({ searchParams }: { searchParams: Promise
     session.memberships.some(m=>m.role==='SM') ? 'Branch bookings' :
     session.memberships.some(m=>m.role==='TL') ? 'Team bookings' : 'My bookings';
   return <WorkspaceShell {...session} page="bookings">
-    <div className={styles.pageHeader}><div><span className={styles.eyebrow}>Sales & Fulfilment / Customer files</span><h1>{title}</h1><p>Saved booking details for your assigned scope.</p></div>{canCreate && <Link className={styles.action} href="/bookings/new"><Icon name="folder" />New booking</Link>}</div>
+    <div className={styles.pageHeader}>
+      <div><span className={styles.eyebrow}>Sales & Fulfilment / Customer files</span><h1>{title}</h1><p>Saved booking details for your assigned scope.</p></div>
+      {canCreate && <div className={styles.actionsGroup}>
+        <Link className={styles.action} href="/bookings/new"><Icon name="folder" />New booking</Link>
+        <ActionForm action={createTestBooking} label="Create test booking" secondary>
+          <input type="hidden" name="operation" value={randomUUID()} />
+        </ActionForm>
+      </div>}
+    </div>
     <form action="/bookings" className={styles.search}><label>Search by<SearchSelect key={searchBy} name="search_by" label="Search by" defaultValue={searchBy} options={[{value:"customer_id",label:"Customer ID"},{value:"name",label:"Customer name"}]} /></label><label>Search value<input name="q" defaultValue={q} maxLength={200} placeholder="Customer ID or name" type="search" /></label><button>Search</button></form>
     <div className={styles.list}>
       <div className={styles.columns} aria-hidden="true"><span>Customer ID</span><span>Customer / booking</span><span>Vehicle</span><span>Last saved</span></div>

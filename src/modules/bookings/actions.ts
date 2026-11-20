@@ -1,10 +1,11 @@
 'use server';
+import { randomUUID } from 'node:crypto';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import type { ActionState } from '@/modules/identity/actions';
 import { requireStaff } from '@/modules/identity/session';
 import { safeError, uuid, textField } from '@/lib/errors';
-import { bookingFields, type BookingData } from './fields';
+import { bookingFields, type BookingData, generateSampleBookingData } from './fields';
 
 export async function saveBooking(_: ActionState, form: FormData): Promise<ActionState> {
   const { client } = await requireStaff();
@@ -23,6 +24,27 @@ export async function saveBooking(_: ActionState, form: FormData): Promise<Actio
     data[field.key] = value.trim();
   }
   const result = await client.rpc('save_booking_draft', { p_operation: operation, p_membership: membership, p_data: data, p_confirmed: true, p_booking: id || undefined, p_revision: id ? revision : undefined });
+  if (result.error || !result.data) return { error: safeError(result.error) };
+  revalidatePath('/bookings');
+  revalidatePath(`/bookings/${result.data}`);
+  redirect(`/bookings/${result.data}?saved=1`);
+}
+
+export async function createTestBooking(_: ActionState, form: FormData): Promise<ActionState> {
+  const { client, memberships } = await requireStaff();
+  const so = memberships.find(m => m.role === 'SO');
+  if (!so) return { error: 'An active Sales Officer assignment is required to create a booking draft.' };
+
+  const operation = textField(form, 'operation', 36) || randomUUID();
+  const testData = generateSampleBookingData();
+
+  const result = await client.rpc('save_booking_draft', {
+    p_operation: operation,
+    p_membership: so.id,
+    p_data: testData,
+    p_confirmed: true,
+  });
+
   if (result.error || !result.data) return { error: safeError(result.error) };
   revalidatePath('/bookings');
   revalidatePath(`/bookings/${result.data}`);
