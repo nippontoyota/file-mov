@@ -10,10 +10,10 @@ import { bookingData } from '@/modules/bookings/fields';
 import styles from './cashier.module.css';
 
 const methods = [
-  { key: 'card', label: 'Card Payment', icon: 'card' as IconName, sub: 'POS Debit & Credit Card Slips' },
-  { key: 'upi', label: 'UPI Transfer', icon: 'upi' as IconName, sub: 'QR, PhonePe, GPay, Paytm UTR' },
-  { key: 'cheque', label: 'Cheque & DD', icon: 'cheque' as IconName, sub: 'Bank Clearing Instruments' },
-  { key: 'cash', label: 'Cash Counter', icon: 'cash' as IconName, sub: 'Physical Counter Currency' },
+  { key: 'card', label: 'Card', icon: 'card' as IconName, sub: 'POS Debit & Credit' },
+  { key: 'upi', label: 'UPI', icon: 'upi' as IconName, sub: 'QR, PhonePe, GPay, UTR' },
+  { key: 'cheque', label: 'Cheque', icon: 'cheque' as IconName, sub: 'Bank Instruments & DD' },
+  { key: 'cash', label: 'Cash', icon: 'cash' as IconName, sub: 'Counter Physical Currency' },
 ] as const;
 
 export default async function CashierPage({ searchParams }: { searchParams: Promise<{ method?: string }> }) {
@@ -78,10 +78,10 @@ export default async function CashierPage({ searchParams }: { searchParams: Prom
                     {data.pendingCount > 0 ? (
                       <span className={styles.countBadge}>
                         <span className={styles.ball} />
-                        {data.pendingCount} Pending
+                        {data.pendingCount} pending
                       </span>
                     ) : (
-                      <span className={styles.countBadgeClear}>Verified</span>
+                      <span className={styles.countBadgeClear}>0 pending</span>
                     )}
                   </div>
                 </div>
@@ -89,7 +89,7 @@ export default async function CashierPage({ searchParams }: { searchParams: Prom
                 <div>
                   <h2 className={styles.cardTitle}>{m.label}</h2>
                   <p className={styles.cardAmount}>₹{data.total.toLocaleString('en-IN')}</p>
-                  <p className={styles.cardSub}>{m.sub}</p>
+                  <p className={styles.cardSub}>{data.count} payment{data.count === 1 ? '' : 's'} · {m.sub}</p>
                 </div>
               </Link>
             );
@@ -98,9 +98,9 @@ export default async function CashierPage({ searchParams }: { searchParams: Prom
 
         {/* Filter Bar */}
         <div className={styles.filterBar}>
-          <span style={{ fontSize: '13px', fontWeight: 650, color: 'var(--muted)' }}>Filter queue:</span>
+          <span className={styles.filterLabel}>Filter by mode:</span>
           <Link href="/cashier" className={`${styles.filterPill} ${!activeMethod ? styles.filterPillActive : ''}`}>
-            All Collections ({allPayments.length})
+            All ({allPayments.length})
           </Link>
           {methods.map(m => (
             <Link
