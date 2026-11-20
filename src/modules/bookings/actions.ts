@@ -43,3 +43,21 @@ export async function receiveFile(_:ActionState,form:FormData):Promise<ActionSta
  if(result.error) return {error:safeError(result.error)};
  revalidatePath('/bookings');redirect(`/bookings/${id}`);
 }
+
+export async function approveTL(_:ActionState,form:FormData):Promise<ActionState>{
+ const {client}=await requireStaff();const id=String(form.get('booking'));const operation=String(form.get('operation'));const revision=Number(form.get('revision'));
+ if(!uuid.test(id) || !uuid.test(operation) || !Number.isSafeInteger(revision)) return {error:'Refresh the file before approving.'};
+ const result=await client.rpc('approve_booking_tl',{p_operation:operation,p_booking:id,p_revision:revision});
+ if(result.error) return {error:safeError(result.error)};
+ revalidatePath('/bookings');redirect(`/bookings/${id}`);
+}
+
+export async function approveSM(_:ActionState,form:FormData):Promise<ActionState>{
+ const {client}=await requireStaff();const id=String(form.get('booking'));const operation=String(form.get('operation'));const revision=Number(form.get('revision'));
+ const allocation=textField(form,'allocation_ref',100);
+ if(!uuid.test(id) || !uuid.test(operation) || !Number.isSafeInteger(revision)) return {error:'Refresh the file before approving.'};
+ if(!allocation) return {error:'Enter the vehicle allocation reference (Chassis or VIN number).'};
+ const result=await client.rpc('approve_booking_sm',{p_operation:operation,p_booking:id,p_revision:revision,p_allocation_ref:allocation});
+ if(result.error) return {error:safeError(result.error)};
+ revalidatePath('/bookings');redirect(`/bookings/${id}`);
+}

@@ -24,7 +24,7 @@ export default async function Bookings({ searchParams }: { searchParams: Promise
       <div className={styles.columns} aria-hidden="true"><span>Customer ID</span><span>Customer / booking</span><span>Vehicle</span><span>Last saved</span></div>
       {!result.data.length && <div className={styles.empty}><Icon name="folder" /><h2>{q ? 'No matching bookings' : 'No booking files yet'}</h2><p>{q ? 'Check the Customer ID or search by customer name.' : canCreate ? 'Create a file for a confirmed booking to get started.' : 'Booking drafts from your Sales Officers will appear here.'}</p></div>}
       {result.data.map(b=>{const data=bookingData(b.data);return <Link key={b.id} href={`/bookings/${b.id}`} className={styles.row} aria-label={`Open customer ${b.customer_id || 'ID not entered'}, booking ${data.booking_number || b.id.slice(0,8)} for ${data.customer_name || 'unnamed customer'}`}>
-        <span><strong>{b.customer_id || 'Customer ID not entered'}</strong><small>{b.state==='draft'?'Draft':'With TL'} · v{b.revision}</small></span>
+        <span><strong>{b.customer_id || 'Customer ID not entered'}</strong><small>{b.state==='draft'?'Draft':b.state==='tl_review'?'With TL':b.state==='sm_review'?'With SM':b.state==='bo_review'?'With Back Office':b.state} · v{b.revision}</small></span>
         <span><strong>{data.customer_name || 'Customer not entered'}</strong><small>Booking {data.booking_number || 'number not entered'}</small><small>{b.so_name}</small></span>
         <span>{data.model || 'Model not entered'}<small>{[data.suffix_1,data.colour_1].filter(Boolean).join(' / ')}</small></span>
         <span>{new Intl.DateTimeFormat('en-IN',{dateStyle:'medium',timeZone:'Asia/Kolkata'}).format(new Date(b.updated_at))}</span>

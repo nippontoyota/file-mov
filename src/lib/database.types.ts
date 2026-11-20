@@ -183,14 +183,14 @@ isOneToOne: false
                   ]
                 },"sales_submissions": {
                   Row: {
-                    "booking_id": string,"file_revision": number,"received_at": string | null,"received_by": string | null,"receiver_name": string | null,"requirements_version": number,"sender_name": string,"sent_at": string,"sent_by": string
+                    "allocation_ref": string | null,"booking_id": string,"file_revision": number,"received_at": string | null,"received_by": string | null,"receiver_name": string | null,"requirements_version": number,"sender_name": string,"sent_at": string,"sent_by": string,"sm_approved_at": string | null,"sm_approved_by": string | null,"sm_approver_name": string | null,"tl_approved_at": string | null,"tl_approved_by": string | null,"tl_approver_name": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "booking_id": string,"file_revision": number,"received_at"?: string | null,"received_by"?: string | null,"receiver_name"?: string | null,"requirements_version"?: number,"sender_name": string,"sent_at"?: string,"sent_by": string
+                    "allocation_ref"?: string | null,"booking_id": string,"file_revision": number,"received_at"?: string | null,"received_by"?: string | null,"receiver_name"?: string | null,"requirements_version"?: number,"sender_name": string,"sent_at"?: string,"sent_by": string,"sm_approved_at"?: string | null,"sm_approved_by"?: string | null,"sm_approver_name"?: string | null,"tl_approved_at"?: string | null,"tl_approved_by"?: string | null,"tl_approver_name"?: string | null
                   }
                   Update: {
-                    "booking_id"?: string,"file_revision"?: number,"received_at"?: string | null,"received_by"?: string | null,"receiver_name"?: string | null,"requirements_version"?: number,"sender_name"?: string,"sent_at"?: string,"sent_by"?: string
+                    "allocation_ref"?: string | null,"booking_id"?: string,"file_revision"?: number,"received_at"?: string | null,"received_by"?: string | null,"receiver_name"?: string | null,"requirements_version"?: number,"sender_name"?: string,"sent_at"?: string,"sent_by"?: string,"sm_approved_at"?: string | null,"sm_approved_by"?: string | null,"sm_approver_name"?: string | null,"tl_approved_at"?: string | null,"tl_approved_by"?: string | null,"tl_approver_name"?: string | null
                   }
                   Relationships: [
                     {
@@ -214,6 +214,18 @@ isOneToOne: false
     },{
       foreignKeyName: "sales_submissions_sent_by_fkey"
       columns: ["sent_by"]
+isOneToOne: false
+      referencedRelation: "staff"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "sales_submissions_sm_approved_by_fkey"
+      columns: ["sm_approved_by"]
+isOneToOne: false
+      referencedRelation: "staff"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "sales_submissions_tl_approved_by_fkey"
+      columns: ["tl_approved_by"]
 isOneToOne: false
       referencedRelation: "staff"
       referencedColumns: ["id"]
@@ -299,6 +311,12 @@ isOneToOne: false
           Functions: {
             "accept_staff_invitation":
 { Args: { "p_invitation": string }; Returns: string
+                           },
+"approve_booking_sm":
+{ Args: { "p_allocation_ref": string,"p_booking": string,"p_operation": string,"p_revision": number }; Returns: string
+                           },
+"approve_booking_tl":
+{ Args: { "p_booking": string,"p_operation": string,"p_revision": number }; Returns: string
                            },
 "complete_staff_account":
 { Args: { "p_invitation": string }; Returns: string
