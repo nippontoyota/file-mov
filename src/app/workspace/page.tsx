@@ -8,6 +8,7 @@ import styles from "@/components/workspace/workspace.module.css";
 export default async function Workspace() {
   const { profile, memberships } = await requireStaff();
   const isAdmin = memberships.some(m => m.role === "Admin");
+  const isCashier = memberships.some(m => m.role === "Cashier");
   const canUseBookings = memberships.some(m => ["SO", "TL", "SM", "BO", "Insurance", "Accounts", "Cashier", "Accessories", "Security"].includes(m.role));
   const canCreateBooking = memberships.some(m => m.role === "SO");
   const assignedRoles = [...new Set(memberships.map(m => m.role))];
@@ -39,7 +40,10 @@ export default async function Workspace() {
       <div>
         <section className={styles.readyPanel}>
           <div className={styles.emptyArtwork}><Icon name="folder" /><Icon name="lock" /></div>
-          {canUseBookings ? <>
+          {isCashier ? <>
+            <h2>Cashier counter</h2><p>Review and verify customer booking advances across Card, UPI, Cheque, and Cash counters, and issue official receipts.</p>
+            <Link className={styles.primaryLink} href="/cashier">Open Cashier Desk<Icon name="arrow" /></Link>
+          </> : canUseBookings ? <>
             <h2>Booking files</h2><p>{canCreateBooking ? "Enter the file header and booking details, save drafts and continue later." : "View booking drafts in your assigned team or branch."}</p>
             <Link className={styles.primaryLink} href={canCreateBooking ? "/bookings/new" : "/bookings"}>{canCreateBooking ? "New booking" : "View bookings"}<Icon name="arrow" /></Link>
             <p style={{ marginTop: 20 }}>Registered-owner documents and SO-to-TL file submission are available. Approval steps are not enabled yet.</p>

@@ -10,8 +10,9 @@ import { roles } from "./roles";
 import styles from "./workspace.module.css";
 
 type Session = Awaited<ReturnType<typeof requireStaff>>;
-export function WorkspaceShell({ profile, memberships, page, children }: Pick<Session, "profile" | "memberships"> & { page: "workspace" | "staff" | "bookings"; children: ReactNode }) {
+export function WorkspaceShell({ profile, memberships, page, children }: Pick<Session, "profile" | "memberships"> & { page: "workspace" | "staff" | "bookings" | "cashier"; children: ReactNode }) {
   const isAdmin = memberships.some(m => m.role === "Admin");
+  const isCashier = memberships.some(m => m.role === "Cashier");
   const canUseBookings = memberships.some(m => ["SO", "TL", "SM", "BO", "Insurance", "Accounts", "Cashier", "Accessories", "Security"].includes(m.role));
   const canCreateBooking = memberships.some(m => m.role === "SO");
   const bookingLabel = memberships.some(m => m.role === "BO") ? "Back Office files" :
@@ -32,6 +33,7 @@ export function WorkspaceShell({ profile, memberships, page, children }: Pick<Se
       <p className={styles.navLabel}>Workspace</p>
       <Link href="/workspace" aria-current={page === "workspace" ? "page" : undefined}><Icon name="home" />Overview</Link>
       <a href="/workspace#assignments"><Icon name="shield" />My assignments<span className={styles.count}>{memberships.length}</span></a>
+      {isCashier && <><p className={styles.navLabel}>Cashier</p><Link href="/cashier" aria-current={page === "cashier" ? "page" : undefined}><Icon name="wallet" />Cashier desk</Link></>}
       {canUseBookings && <><p className={styles.navLabel}>{navSectionLabel}</p><Link href="/bookings" aria-current={page === "bookings" ? "page" : undefined}><Icon name="folder" />{bookingLabel}</Link>{canCreateBooking && <Link href="/bookings/new"><Icon name="document" />New booking</Link>}</>}
       {isAdmin && <><p className={styles.navLabel}>Administration</p>
         <Link href="/staff" aria-current={page === "staff" ? "page" : undefined}><Icon name="users" />Staff access</Link>
@@ -56,6 +58,7 @@ export function WorkspaceShell({ profile, memberships, page, children }: Pick<Se
       <span className={styles.appIcon}><Icon name="folder" /></span>
       <Link href="/workspace" title="Workspace overview" aria-label="Workspace overview" className={page === "workspace" ? styles.railActive : undefined}><Icon name="home" /></Link>
       {isAdmin && <Link href="/staff" title="Staff administration" aria-label="Staff administration" className={page === "staff" ? styles.railActive : undefined}><Icon name="users" /></Link>}
+      {isCashier && <Link href="/cashier" title="Cashier counter" aria-label="Cashier counter" className={page === "cashier" ? styles.railActive : undefined}><Icon name="wallet" /></Link>}
       {canUseBookings && <Link href="/bookings" title="Booking files" aria-label="Booking files" className={page === "bookings" ? styles.railActive : undefined}><Icon name="folder" /></Link>}
       <a href="/workspace#assignments" title="Your access" aria-label="Your access"><Icon name="shield" /></a>
       <span className={styles.railBottom}>FD</span>
@@ -64,7 +67,7 @@ export function WorkspaceShell({ profile, memberships, page, children }: Pick<Se
     <div className={styles.main}>
       <header className={styles.topbar}>
         <MobileNavigation>{navigation}</MobileNavigation>
-        <div className={styles.breadcrumb}><span>Nippon Toyota</span><span>/</span><strong>{page === "staff" ? "Staff access" : page === "bookings" ? "Bookings" : "Workspace"}</strong></div>
+        <div className={styles.breadcrumb}><span>Nippon Toyota</span><span>/</span><strong>{page === "staff" ? "Staff access" : page === "bookings" ? "Bookings" : page === "cashier" ? "Cashier" : "Workspace"}</strong></div>
         <span className={styles.mode}><span />Local workspace</span>
         <span className={styles.topAvatar} title={profile.display_name}>{initials}</span>
       </header>

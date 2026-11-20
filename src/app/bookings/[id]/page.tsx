@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { BookingDocuments } from '@/components/bookings/documents';
 import { ActionForm } from '@/components/action-form';
 import { sendToTL, receiveFile, approveTL, approveSM, recordBOPdi, recordBOVahanAndStatutory, dispatchBODepartment } from '@/modules/bookings/actions';
+import { recordPayment } from '@/modules/cashier/actions';
 import { requiredBookingFields } from '@/modules/bookings/documents';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -28,6 +29,8 @@ export default async function Booking({params,searchParams}:{params:Promise<{id:
   const submission=await session.client.from('sales_submissions').select('*').eq('booking_id',id).maybeSingle();
   const prepResult=await session.client.from('bo_preparations').select('*').eq('booking_id',id).maybeSingle();
   const prep=prepResult.data;
+  const payResult=await session.client.from('booking_payments').select('*').eq('booking_id',id).maybeSingle();
+  const payment=payResult.data;
   if(docs.error || submission.error) throw new Error('File documents unavailable');
 
   const isTL=session.memberships.some(m=>m.role==='TL' && m.branch_id===b.branch_id && m.team_id===b.team_id);
@@ -61,6 +64,67 @@ export default async function Booking({params,searchParams}:{params:Promise<{id:
     {!editable && <p className={styles.note}>Read-only file. Submitted details and document versions are preserved together.</p>}
     <DraftEditor suggestions={await bookingSuggestions(session.client)} key={b.revision} data={data} id={id} revision={b.revision} editable={editable} soName={b.so_name} scopes={[{id:own?.id || '',label:`${b.branches?.name} / ${b.teams?.name}`}]} />
     <BookingDocuments booking={id} revision={b.revision} documents={docs.data} editable={editable} owner={{name:data.registration_name || '',address:data.registration_address || '',pin:data.registration_pin || ''}} />
+
+    <section className={styles.boSection}>
+      <h2>Booking Advance Payment & Cashier Verification</h2>
+      <p>Showroom booking token payment across Card, UPI, Cheque, or Cash counters.</p>
+      {payment ? (
+        <div style={{ marginTop: '16px', padding: '18px 20px', background: '#fafbfc', border: '1px solid var(--line)', borderRadius: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+            <div>
+              <strong style={{ fontSize: '18px' }}>₹{Number(payment.amount).toLocaleString('en-IN')}</strong>
+              <span style={{ marginLeft: '12px', padding: '3px 8px', background: '#f1f3f5', borderRadius: '4px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>
+                {payment.payment_method}
+              </span>
+              <div style={{ color: 'var(--muted)', fontSize: '13px', marginTop: '4px' }}>
+                Reference: <strong>{payment.reference_no}</strong> · Recorded {new Date(payment.created_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}
+              </div>
+            </div>
+            <div>
+              <span className={payment.status === 'verified' ? styles.badgePassed : styles.badgePending}>
+                {payment.status === 'verified' ? `✓ Receipt #${payment.receipt_no} Issued by Cashier` : '⏳ Awaiting Cashier Receipt Confirmation'}
+              </span>
+            </div>
+          </div>
+          {payment.proof_document_id && (
+            <div style={{ marginTop: '10px' }}>
+              <a href={`/api/booking-documents/${payment.proof_document_id}`} target="_blank" rel="noreferrer" style={{ fontSize: '13px', color: '#4338ca', fontWeight: 600, textDecoration: 'underline' }}>
+                View attached customer payment slip
+              </a>
+            </div>
+          )}
+        </div>
+      ) : editable ? (
+        <div style={{ marginTop: '16px', padding: '18px 20px', background: '#fafbfc', border: '1px solid var(--line)', borderRadius: '8px' }}>
+          <h3 style={{ fontSize: '15px', margin: '0 0 10px' }}>Record Initial Booking Advance</h3>
+          <p style={{ fontSize: '13px', color: 'var(--muted)', margin: '0 0 14px' }}>
+            Enter the customer booking token payment. This will route to the Cashier Counter for receipt confirmation.
+          </p>
+          <ActionForm action={recordPayment} label="Record Booking Advance">
+            <input type="hidden" name="operation" value={randomUUID()} />
+            <input type="hidden" name="booking" value={id} />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '14px', marginBottom: '12px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 550 }}>Payment Mode
+                <select name="method" required style={{ display: 'block', width: '100%', marginTop: '4px', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--line)' }}>
+                  <option value="card">Card (POS Terminal)</option>
+                  <option value="upi">UPI (GPay / PhonePe / QR)</option>
+                  <option value="cheque">Cheque / Demand Draft</option>
+                  <option value="cash">Cash (Counter Deposit)</option>
+                </select>
+              </label>
+              <label style={{ fontSize: '13px', fontWeight: 550 }}>Advance Amount (₹)
+                <input name="amount" type="number" required defaultValue="25000" min="1" step="1" style={{ display: 'block', width: '100%', marginTop: '4px', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--line)' }} />
+              </label>
+              <label style={{ fontSize: '13px', fontWeight: 550 }}>Reference / UTR / Cheque No
+                <input name="reference" required placeholder="e.g. UTR-982189 / CHQ-0021" maxLength={100} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--line)' }} />
+              </label>
+            </div>
+          </ActionForm>
+        </div>
+      ) : (
+        <p style={{ color: 'var(--muted)', fontSize: '14px' }}>No advance payment recorded for this booking file.</p>
+      )}
+    </section>
     
     <section className={styles.handoff}><h2>{sectionTitle}</h2>
       {editable && <><p>Save your changes first. Send the saved details and attached documents together. The file will become read-only for the SO.</p><p>{missing.length ? `Required booking details still missing: ${missing.join(', ')}.` : 'Required booking details are complete.'} Both current registered-owner documents must be attached.</p><ActionForm action={sendToTL} label="Send to TL"><input type="hidden" name="operation" value={randomUUID()}/><input type="hidden" name="booking" value={id}/><input type="hidden" name="revision" value={b.revision}/></ActionForm></>}

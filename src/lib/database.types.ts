@@ -119,6 +119,50 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"booking_payments": {
+                  Row: {
+                    "amount": number,"booking_id": string,"branch_id": string,"created_at": string,"created_by": string,"id": string,"payment_method": string,"payment_type": string,"proof_document_id": string | null,"receipt_no": string | null,"reference_no": string,"status": string,"updated_at": string,"verified_at": string | null,"verified_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "amount": number,"booking_id": string,"branch_id": string,"created_at"?: string,"created_by": string,"id"?: string,"payment_method": string,"payment_type"?: string,"proof_document_id"?: string | null,"receipt_no"?: string | null,"reference_no": string,"status"?: string,"updated_at"?: string,"verified_at"?: string | null,"verified_by"?: string | null
+                  }
+                  Update: {
+                    "amount"?: number,"booking_id"?: string,"branch_id"?: string,"created_at"?: string,"created_by"?: string,"id"?: string,"payment_method"?: string,"payment_type"?: string,"proof_document_id"?: string | null,"receipt_no"?: string | null,"reference_no"?: string,"status"?: string,"updated_at"?: string,"verified_at"?: string | null,"verified_by"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "booking_payments_booking_id_fkey"
+      columns: ["booking_id"]
+isOneToOne: false
+      referencedRelation: "bookings"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "booking_payments_branch_id_fkey"
+      columns: ["branch_id"]
+isOneToOne: false
+      referencedRelation: "branches"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "booking_payments_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "staff"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "booking_payments_proof_document_id_fkey"
+      columns: ["proof_document_id"]
+isOneToOne: false
+      referencedRelation: "booking_documents"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "booking_payments_verified_by_fkey"
+      columns: ["verified_by"]
+isOneToOne: false
+      referencedRelation: "staff"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"booking_versions": {
                   Row: {
                     "actor_id": string,"actor_name": string,"booking_id": string,"data": NonNullable<Json>,"document_ids": (string)[],"form_version": number,"recorded_at": string,"revision": number
@@ -404,6 +448,9 @@ isOneToOne: false
 "record_bo_vahan_and_statutory":
 { Args: { "p_booking": string,"p_disclaimer_signed": boolean,"p_form20_signed": boolean,"p_operation": string,"p_revision": number,"p_vahan_app_no": string }; Returns: string
                            },
+"record_booking_payment":
+{ Args: { "p_amount": number,"p_booking": string,"p_method": string,"p_operation": string,"p_proof_document"?: string,"p_reference": string }; Returns: string
+                           },
 "record_document_download":
 { Args: { "p_document": string }; Returns: string
                            },
@@ -418,6 +465,9 @@ isOneToOne: false
                            },
 "set_membership_active":
 { Args: { "p_active": boolean,"p_membership": string,"p_operation": string,"p_reason": string,"p_revision": number }; Returns: string
+                           },
+"verify_booking_payment":
+{ Args: { "p_operation": string,"p_payment_id": string,"p_proof_document"?: string,"p_receipt_no": string }; Returns: string
                            }
           }
           Enums: {

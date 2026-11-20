@@ -24,6 +24,10 @@ const paths = {
   menu: "M4 6h16M4 12h16M4 18h16",
   close: "m6 6 12 12M6 18 18 6",
   branch: "M3 21V5l9-3v19M12 8h9v13M1 21h22M6 7h3M6 11h3M6 15h3M15 11h3M15 15h3",
+  card: "M2 5h20v14H2ZM2 10h20M6 15h4",
+  upi: "M17 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2ZM12 18h.01M9 6h6M9 9h6",
+  cheque: "M3 5h18v14H3ZM3 10h18M7 15h6M16 15h2",
+  cash: "M2 6h20v12H2ZM6 12a6 6 0 0 1 12 0M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z",
 } as const;
 export type IconName = keyof typeof paths;
 export function Icon({ name, ...props }: SVGProps<SVGSVGElement> & { name: IconName }) {
