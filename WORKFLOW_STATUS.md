@@ -12,9 +12,9 @@
 
 The project replaces the physical movement of the paper **"customer file jacket"** with an authenticated, tamper-proof digital workflow. 
 
-* **Overall Project Progress:** **~30% Complete**
-* **Currently Delivered:** Core Foundation, Multi-Branch Security, Sales Officer Draft Engine, Cryptographic Document Vault (KYC), and the First Digital Handoff (SO $\rightarrow$ Team Leader Receipt).
-* **Next Immediate Priority:** Team Leader Formal Approval and Sales Manager Approval with Vehicle Allocation (Chassis/VIN Number).
+* **Overall Project Progress:** **~50% Complete**
+* **Currently Delivered:** Core Foundation, Multi-Branch Security, Sales Officer Draft Engine, Cryptographic Document Vault (KYC), First Digital Handoff (SO ➔ TL Receipt), TL Formal Approval, SM Commercial Approval & Allocation Engine (VIN/Chassis), and Back Office Vehicle Preparation (PDI Verification, VAHAN Staging, Form 20/Disclaimer ink-signature tracking, and Departmental Dispatches to Insurance, Accounts, and Accessories).
+* **Next Immediate Priority:** Phase 3 — Insurance Verification Gate & Accounts Commercial Invoicing (Tasks 11 & 12).
 
 ```
 [COMPLETED & WORKING]                               [REMAINING / UPCOMING]
@@ -180,10 +180,10 @@ The remaining steps complete the journey from Team Leader review through vehicle
 | **M1.4** | Booking Form Drafting & Validation | SO | **Completed** | `src/components/bookings/draft-editor.tsx` |
 | **M1.5** | Private Document Vault & HMAC Attestation | SO / Admin | **Completed** | `src/app/api/booking-documents/route.ts` |
 | **M1.6** | SO Submit to TL & TL Receipt Command | SO / TL | **Completed** | `supabase/migrations/20261110000700_sales_submission.sql` |
-| **M2.1** | TL Formal Checklist Review & Approval | TL | ⏳ **Next Up** | *Scheduled Task #8* |
-| **M2.2** | SM Approval & Chassis Allocation Engine | SM | ⏳ **Next Up** | *Scheduled Task #9* |
-| **M3.1** | Back Office File Docket & VAHAN Staging | BO | 📋 *Planned* | *Scheduled Task #10* |
-| **M3.2** | Insurance Verification Gate | Insurance | 📋 *Planned* | *Scheduled Task #11* |
+| **M2.1** | TL Formal Checklist Review & Approval | TL | **Completed** | `supabase/migrations/20261120000100_sales_approvals.sql` |
+| **M2.2** | SM Approval & Chassis Allocation Engine | SM | **Completed** | `src/app/bookings/[id]/page.tsx` & `src/modules/bookings/` |
+| **M3.1** | Back Office PDI, VAHAN Staging & Dispatches | BO | **Completed** | `supabase/migrations/20261120000200_back_office_prep.sql` |
+| **M3.2** | Insurance Verification Gate | Insurance | ⏳ **Next Up** | *Scheduled Task #11* |
 | **M3.3** | Accounts Invoicing & FASTag System | Accounts / Cashier | 📋 *Planned* | *Scheduled Task #12* |
 | **M4.1** | Accessories Requisition & Partial Fitment | Accessories | 📋 *Planned* | *Scheduled Task #13* |
 | **M4.2** | Accessories P&L Audit & Bill Sign-off | Accessories / SM | 📋 *Planned* | *Scheduled Task #14* |
@@ -198,6 +198,6 @@ The remaining steps complete the journey from Team Leader review through vehicle
 
 * **TypeScript Compilation:** `next typegen && tsc --noEmit` $\rightarrow$ **0 Errors**
 * **Linting:** ESLint 9 $\rightarrow$ **0 Warnings / 0 Errors**
-* **Production Build:** Next.js Turbopack $\rightarrow$ **Compiled successfully in 1.1s**
-* **Database Integration Tests:** `npm run test:db` $\rightarrow$ **221 / 221 Tests Passed**
+* **Production Build:** Next.js Turbopack $\rightarrow$ **Compiled successfully in 542ms**
+* **Database Integration Tests:** `npm run test:db` $\rightarrow$ **285 / 285 Tests Passed**
 * **Local Test Accounts:** 10 Showroom roles provisioned and active in Kalamassery branch.
