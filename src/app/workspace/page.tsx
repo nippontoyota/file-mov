@@ -8,7 +8,7 @@ import styles from "@/components/workspace/workspace.module.css";
 export default async function Workspace() {
   const { profile, memberships } = await requireStaff();
   const isAdmin = memberships.some(m => m.role === "Admin");
-  const canUseBookings = memberships.some(m => ["SO", "TL", "SM"].includes(m.role));
+  const canUseBookings = memberships.some(m => ["SO", "TL", "SM", "BO", "Insurance", "Accounts", "Cashier", "Accessories", "Security"].includes(m.role));
   const canCreateBooking = memberships.some(m => m.role === "SO");
   const assignedRoles = [...new Set(memberships.map(m => m.role))];
   return <WorkspaceShell profile={profile} memberships={memberships} page="workspace">

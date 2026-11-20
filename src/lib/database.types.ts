@@ -31,6 +31,68 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"bo_preparations": {
+                  Row: {
+                    "accessories_dispatched_at": string | null,"accessories_dispatched_by": string | null,"accounts_dispatched_at": string | null,"accounts_dispatched_by": string | null,"booking_id": string,"branch_id": string,"created_at": string,"disclaimer_signed": boolean,"documents_completed_at": string | null,"documents_completed_by": string | null,"form20_signed": boolean,"insurance_dispatched_at": string | null,"insurance_dispatched_by": string | null,"pdi_completed_at": string | null,"pdi_completed_by": string | null,"pdi_inspector_name": string | null,"pdi_notes": string | null,"pdi_status": string,"updated_at": string,"vahan_app_no": string | null,"vahan_entered_at": string | null,"vahan_entered_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "accessories_dispatched_at"?: string | null,"accessories_dispatched_by"?: string | null,"accounts_dispatched_at"?: string | null,"accounts_dispatched_by"?: string | null,"booking_id": string,"branch_id": string,"created_at"?: string,"disclaimer_signed"?: boolean,"documents_completed_at"?: string | null,"documents_completed_by"?: string | null,"form20_signed"?: boolean,"insurance_dispatched_at"?: string | null,"insurance_dispatched_by"?: string | null,"pdi_completed_at"?: string | null,"pdi_completed_by"?: string | null,"pdi_inspector_name"?: string | null,"pdi_notes"?: string | null,"pdi_status"?: string,"updated_at"?: string,"vahan_app_no"?: string | null,"vahan_entered_at"?: string | null,"vahan_entered_by"?: string | null
+                  }
+                  Update: {
+                    "accessories_dispatched_at"?: string | null,"accessories_dispatched_by"?: string | null,"accounts_dispatched_at"?: string | null,"accounts_dispatched_by"?: string | null,"booking_id"?: string,"branch_id"?: string,"created_at"?: string,"disclaimer_signed"?: boolean,"documents_completed_at"?: string | null,"documents_completed_by"?: string | null,"form20_signed"?: boolean,"insurance_dispatched_at"?: string | null,"insurance_dispatched_by"?: string | null,"pdi_completed_at"?: string | null,"pdi_completed_by"?: string | null,"pdi_inspector_name"?: string | null,"pdi_notes"?: string | null,"pdi_status"?: string,"updated_at"?: string,"vahan_app_no"?: string | null,"vahan_entered_at"?: string | null,"vahan_entered_by"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "bo_preparations_accessories_dispatched_by_fkey"
+      columns: ["accessories_dispatched_by"]
+isOneToOne: false
+      referencedRelation: "staff"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "bo_preparations_accounts_dispatched_by_fkey"
+      columns: ["accounts_dispatched_by"]
+isOneToOne: false
+      referencedRelation: "staff"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "bo_preparations_booking_id_fkey"
+      columns: ["booking_id"]
+isOneToOne: true
+      referencedRelation: "bookings"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "bo_preparations_branch_id_fkey"
+      columns: ["branch_id"]
+isOneToOne: false
+      referencedRelation: "branches"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "bo_preparations_documents_completed_by_fkey"
+      columns: ["documents_completed_by"]
+isOneToOne: false
+      referencedRelation: "staff"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "bo_preparations_insurance_dispatched_by_fkey"
+      columns: ["insurance_dispatched_by"]
+isOneToOne: false
+      referencedRelation: "staff"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "bo_preparations_pdi_completed_by_fkey"
+      columns: ["pdi_completed_by"]
+isOneToOne: false
+      referencedRelation: "staff"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "bo_preparations_vahan_entered_by_fkey"
+      columns: ["vahan_entered_by"]
+isOneToOne: false
+      referencedRelation: "staff"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"booking_documents": {
                   Row: {
                     "booking_id": string,"byte_size": number,"filename": string,"finalized_at": string | null,"id": string,"kind": string,"mime_type": string,"owner_snapshot": NonNullable<Json>,"sha256": string,"status": string,"uploaded_at": string,"uploaded_by": string,"version": number
@@ -327,11 +389,20 @@ isOneToOne: false
 "create_staff_team":
 { Args: { "p_branch": string,"p_name": string,"p_operation": string }; Returns: string
                            },
+"dispatch_bo_department":
+{ Args: { "p_booking": string,"p_operation": string,"p_revision": number,"p_target_dept": string }; Returns: string
+                           },
 "finalize_booking_document":
 { Args: { "p_attestation": string,"p_document": string,"p_revision": number }; Returns: string
                            },
 "receive_sales_file":
 { Args: { "p_booking": string,"p_revision": number }; Returns: string
+                           },
+"record_bo_pdi":
+{ Args: { "p_booking": string,"p_inspector": string,"p_notes": string,"p_operation": string,"p_revision": number,"p_status": string }; Returns: string
+                           },
+"record_bo_vahan_and_statutory":
+{ Args: { "p_booking": string,"p_disclaimer_signed": boolean,"p_form20_signed": boolean,"p_operation": string,"p_revision": number,"p_vahan_app_no": string }; Returns: string
                            },
 "record_document_download":
 { Args: { "p_document": string }; Returns: string

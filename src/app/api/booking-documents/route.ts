@@ -25,7 +25,7 @@ export async function POST(request:Request) {
     if(!id){
       const booking=String(form.get('booking'));const operation=String(form.get('operation'));const kind=String(form.get('kind'));
       const file=form.get('file');
-      if(!uuid.test(booking) || !uuid.test(operation) || !['aadhaar','pan'].includes(kind) || !(file instanceof File)) throw new Error('Choose an Aadhaar or PAN document.');
+      if(!uuid.test(booking) || !uuid.test(operation) || !['aadhaar','pan','form20','disclaimer','vahan_ack'].includes(kind) || !(file instanceof File)) throw new Error('Choose a supported document (PDF or JPEG).');
       const bytes=new Uint8Array(await file.arrayBuffer());
       const hash=inspectDocument(bytes,file.type);
       const filename=file.name.replace(/[\x00-\x1f\x7f/\\]/g,'_').slice(0,200) || 'document';

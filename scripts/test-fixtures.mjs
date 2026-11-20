@@ -33,6 +33,7 @@ export async function installFixtures() {
         const removed=await storage.storage.from('booking-documents').remove(documentIds);
         if(removed.error) throw new Error('Fixture file cleanup failed');
       }
+      await sql.query("delete from public.bo_preparations where branch_id=any($1::uuid[])",[fixtureBranches]);
       await sql.query("delete from public.sales_submissions where booking_id in (select id from public.bookings where branch_id=any($1::uuid[]))",[fixtureBranches]);
       await sql.query("delete from public.booking_documents where booking_id in (select id from public.bookings where branch_id=any($1::uuid[]))",[fixtureBranches]);
       await sql.query("delete from public.booking_versions where booking_id in (select id from public.bookings where branch_id=any($1::uuid[]))", [fixtureBranches]);

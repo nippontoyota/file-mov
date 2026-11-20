@@ -12,9 +12,15 @@ import styles from "./workspace.module.css";
 type Session = Awaited<ReturnType<typeof requireStaff>>;
 export function WorkspaceShell({ profile, memberships, page, children }: Pick<Session, "profile" | "memberships"> & { page: "workspace" | "staff" | "bookings"; children: ReactNode }) {
   const isAdmin = memberships.some(m => m.role === "Admin");
-  const canUseBookings = memberships.some(m => ["SO", "TL", "SM"].includes(m.role));
+  const canUseBookings = memberships.some(m => ["SO", "TL", "SM", "BO", "Insurance", "Accounts", "Cashier", "Accessories", "Security"].includes(m.role));
   const canCreateBooking = memberships.some(m => m.role === "SO");
-  const bookingLabel = memberships.some(m => m.role === "SM") ? "Branch bookings" : memberships.some(m => m.role === "TL") ? "Team bookings" : "My bookings";
+  const bookingLabel = memberships.some(m => m.role === "BO") ? "Back Office files" :
+    memberships.some(m => m.role === "Insurance") ? "Insurance files" :
+    memberships.some(m => m.role === "Accounts") ? "Accounts files" :
+    memberships.some(m => m.role === "Accessories") ? "Accessories files" :
+    memberships.some(m => m.role === "SM") ? "Branch bookings" :
+    memberships.some(m => m.role === "TL") ? "Team bookings" : "My bookings";
+  const navSectionLabel = memberships.some(m => ["BO", "Insurance", "Accounts", "Cashier", "Accessories", "Security"].includes(m.role)) ? "Operations" : "Sales";
   const assignedRoles = [...new Set(memberships.map(m => m.role))];
   const initials = profile.display_name.split(" ").slice(0, 2).map(word => word[0]).join("");
   const navigation = <>
@@ -26,7 +32,7 @@ export function WorkspaceShell({ profile, memberships, page, children }: Pick<Se
       <p className={styles.navLabel}>Workspace</p>
       <Link href="/workspace" aria-current={page === "workspace" ? "page" : undefined}><Icon name="home" />Overview</Link>
       <a href="/workspace#assignments"><Icon name="shield" />My assignments<span className={styles.count}>{memberships.length}</span></a>
-      {canUseBookings && <><p className={styles.navLabel}>Sales</p><Link href="/bookings" aria-current={page === "bookings" ? "page" : undefined}><Icon name="folder" />{bookingLabel}</Link>{canCreateBooking && <Link href="/bookings/new"><Icon name="document" />New booking</Link>}</>}
+      {canUseBookings && <><p className={styles.navLabel}>{navSectionLabel}</p><Link href="/bookings" aria-current={page === "bookings" ? "page" : undefined}><Icon name="folder" />{bookingLabel}</Link>{canCreateBooking && <Link href="/bookings/new"><Icon name="document" />New booking</Link>}</>}
       {isAdmin && <><p className={styles.navLabel}>Administration</p>
         <Link href="/staff" aria-current={page === "staff" ? "page" : undefined}><Icon name="users" />Staff access</Link>
         <a href="/staff#staff-assignments"><Icon name="shield" />Assignments</a>

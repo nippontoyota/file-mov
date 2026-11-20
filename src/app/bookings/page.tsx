@@ -16,9 +16,14 @@ export default async function Bookings({ searchParams }: { searchParams: Promise
   const result = await query;
   if(result.error) throw new Error('Booking list unavailable');
   const canCreate=session.memberships.some(m=>m.role==='SO');
-  const title=session.memberships.some(m=>m.role==='SM') ? 'Branch bookings' : session.memberships.some(m=>m.role==='TL') ? 'Team bookings' : 'My bookings';
+  const title=session.memberships.some(m=>m.role==='BO') ? 'Back Office files' :
+    session.memberships.some(m=>m.role==='Insurance') ? 'Insurance files' :
+    session.memberships.some(m=>m.role==='Accounts') ? 'Accounts files' :
+    session.memberships.some(m=>m.role==='Accessories') ? 'Accessories files' :
+    session.memberships.some(m=>m.role==='SM') ? 'Branch bookings' :
+    session.memberships.some(m=>m.role==='TL') ? 'Team bookings' : 'My bookings';
   return <WorkspaceShell {...session} page="bookings">
-    <div className={styles.pageHeader}><div><span className={styles.eyebrow}>Sales / Customer files</span><h1>{title}</h1><p>Saved booking details for your assigned scope.</p></div>{canCreate && <Link className={styles.action} href="/bookings/new"><Icon name="folder" />New booking</Link>}</div>
+    <div className={styles.pageHeader}><div><span className={styles.eyebrow}>Sales & Fulfilment / Customer files</span><h1>{title}</h1><p>Saved booking details for your assigned scope.</p></div>{canCreate && <Link className={styles.action} href="/bookings/new"><Icon name="folder" />New booking</Link>}</div>
     <form action="/bookings" className={styles.search}><label>Search by<SearchSelect key={searchBy} name="search_by" label="Search by" defaultValue={searchBy} options={[{value:"customer_id",label:"Customer ID"},{value:"name",label:"Customer name"}]} /></label><label>Search value<input name="q" defaultValue={q} maxLength={200} placeholder="Customer ID or name" type="search" /></label><button>Search</button></form>
     <div className={styles.list}>
       <div className={styles.columns} aria-hidden="true"><span>Customer ID</span><span>Customer / booking</span><span>Vehicle</span><span>Last saved</span></div>
