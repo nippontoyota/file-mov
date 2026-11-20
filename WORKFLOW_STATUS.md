@@ -182,6 +182,7 @@ The remaining steps complete the journey from Team Leader review through vehicle
 | **M1.6** | SO Submit to TL & TL Receipt Command | SO / TL | **Completed** | `supabase/migrations/20261110000700_sales_submission.sql` |
 | **M2.1** | TL Formal Checklist Review & Approval | TL | **Completed** | `supabase/migrations/20261120000100_sales_approvals.sql` |
 | **M2.2** | SM Approval & Chassis Allocation Engine | SM | **Completed** | `src/app/bookings/[id]/page.tsx` & `src/modules/bookings/` |
+| **M2.3** | Cashier 4-Mode Counter & Payment Verification | Cashier / SO | **Completed** | `src/app/cashier/` & `supabase/migrations/20261120000300_cashier_payments.sql` |
 | **M3.1** | Back Office PDI, VAHAN Staging & Dispatches | BO | **Completed** | `supabase/migrations/20261120000200_back_office_prep.sql` |
 | **M3.2** | Insurance Verification Gate | Insurance | ⏳ **Next Up** | *Scheduled Task #11* |
 | **M3.3** | Accounts Invoicing & FASTag System | Accounts / Cashier | 📋 *Planned* | *Scheduled Task #12* |
@@ -199,5 +200,5 @@ The remaining steps complete the journey from Team Leader review through vehicle
 * **TypeScript Compilation:** `next typegen && tsc --noEmit` $\rightarrow$ **0 Errors**
 * **Linting:** ESLint 9 $\rightarrow$ **0 Warnings / 0 Errors**
 * **Production Build:** Next.js Turbopack $\rightarrow$ **Compiled successfully in 542ms**
-* **Database Integration Tests:** `npm run test:db` $\rightarrow$ **285 / 285 Tests Passed**
+* **Database Integration Tests:** `npm run test:db` $\rightarrow$ **338 / 338 Tests Passed**
 * **Local Test Accounts:** 10 Showroom roles provisioned and active in Kalamassery branch.
