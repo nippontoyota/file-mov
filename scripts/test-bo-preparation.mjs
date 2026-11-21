@@ -83,9 +83,40 @@ try {
   ok(await tl.rpc('approve_booking_tl', { p_operation: randomUUID(), p_booking: id, p_revision: revision }));
   revision++;
 
-  // SM approves with allocation ref
-  ok(await sm.rpc('approve_booking_sm', {
+  // SM allocates vehicle
+  ok(await sm.rpc('allocate_vehicle_sm', {
     p_operation: randomUUID(), p_booking: id, p_revision: revision, p_allocation_ref: 'MBJ11ZX202699881',
+  }));
+  revision++;
+
+  // SO records customer intimation
+  ok(await so.rpc('record_customer_intimation', {
+    p_operation: randomUUID(), p_booking: id, p_revision: revision, p_notes: 'Customer notified of VIN allocation',
+  }));
+  revision++;
+
+  // Upload proof and record balance payment
+  const payDocId = ok(await so.rpc('reserve_booking_document', {
+    p_operation: randomUUID(), p_booking: id, p_revision: revision,
+    p_kind: 'payment_receipt', p_filename: 'receipt.pdf', p_mime: 'application/pdf',
+    p_size: pdf.length, p_sha256: hash,
+  }));
+  await so.storage.from('booking-documents').upload(payDocId, pdf, { contentType: 'application/pdf' });
+  ok(await so.rpc('finalize_booking_document', { p_document: payDocId, p_revision: revision, p_attestation: proof(payDocId) }));
+  revision++;
+
+  const payId = ok(await so.rpc('record_booking_payment', {
+    p_operation: randomUUID(), p_booking: id, p_amount: 1800000, p_method: 'upi', p_reference: 'RTGS-001', p_payment_type: 'balance_payment', p_proof_document: payDocId,
+  }));
+
+  const cashier = await login('cashier8@example.test');
+  ok(await cashier.rpc('verify_booking_payment', {
+    p_operation: randomUUID(), p_payment_id: payId, p_receipt_no: 'RCP-BAL-001',
+  }));
+
+  // SM hands over to Back Office
+  ok(await sm.rpc('handover_to_bo_sm', {
+    p_operation: randomUUID(), p_booking: id, p_revision: revision,
   }));
   revision++;
 

@@ -93,6 +93,7 @@ export async function recordPayment(_: ActionState, form: FormData): Promise<Act
     }
   }
 
+  const paymentType = textField(form, 'payment_type', 30) || 'booking_advance';
   const result = await client.rpc('record_booking_payment', {
     p_operation: operation,
     p_booking: id,
@@ -100,12 +101,17 @@ export async function recordPayment(_: ActionState, form: FormData): Promise<Act
     p_method: method,
     p_reference: reference,
     p_proof_document: document || undefined,
+    p_payment_type: paymentType,
   });
 
   if (result.error) return { error: safeError(result.error) };
   revalidatePath('/cashier');
   revalidatePath(`/bookings/${id}`);
-  return { success: 'Booking payment advance recorded. Sent to Cashier for verification.' };
+  return {
+    success: paymentType === 'balance_payment'
+      ? 'Vehicle balance payment recorded. Sent to Cashier for verification.'
+      : 'Booking payment advance recorded. Sent to Cashier for verification.',
+  };
 }
 
 export async function verifyPayment(_: ActionState, form: FormData): Promise<ActionState> {

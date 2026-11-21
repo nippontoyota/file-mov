@@ -226,3 +226,31 @@ A request to adjust a label or fix an implementation bug within an agreed rule d
 - **Existing records:** existing drafts/history remain untouched. The confirmed requirements apply when a draft is first sent; no pre-existing submitted files or approvals existed. Submission records preserve requirements version 1, frozen file revision, sender/recipient identity and times. Later rule changes must preserve that evidence. No backfill of fake customer values, files, signatures or receipts.
 - **Security / failure handling:** uploads reserve an opaque private object, verify bytes/size/type signature/hash, then finalize with server attestation under the user's JWT. Pending objects are excluded from evidence. Replacements retain prior versions; owner changes invalidate mismatched copies for submission. Stale writes, forged finalization, unauthorized access and direct mutation are rejected. No service role is used for routine document work. Local synthetic data only.
 - **Verification / recovery:** see implementation-plan.md §18 and architecture.md §13. Preserve records and objects together during recovery; do not reset the workspace. CHG-01's closed-storage baseline and CHG-05's no-submission limitation are superseded only for this slice.
+
+
+## 15. Cashier drill-down, document preview modal, and TL review/return: CHG-12
+
+- **Date / status:** 2026-11-20; confirmed by the user and implemented locally.
+- **Evidence / authority:** user requested: (1) Cashier card click navigates into that category list only with back button; (2) In-page modal preview for Aadhaar, PAN, and payment slips rather than downloading; (3) SO "Send to TL" disabled/greyed-out on hover until Cashier verifies advance payment; (4) Team Leader actions desk with verification checklist, approval to SM, and return to SO for rework with mandatory reason.
+- **Before / after:**
+  - `/cashier` master-detail navigation: clicking category cards filters to that method list only with `← Back to Cashier Categories` link.
+  - Documents render in an in-page modal dialog (`DocumentPreviewModal`) supporting PDF viewports and JPEG/PNG previews.
+  - SO "Send to TL" is disabled with tooltip whenever initial booking advance is unverified.
+  - Team Leader review desk: 4-point verification checklist (Vehicle/Variant, Advance Receipt, Registered Owner, KYC documents).
+  - Return workflow (`return_booking_tl`): TL provides required reason; booking reverts to draft; audit event logged; SO view displays prominent return alert banner with TL remarks.
+- **Trace / dependencies:** R-01, R-03, R-05, R-06, R-11; D-07, D-14, D-17. All database checks pass.
+
+
+## 16. Vehicle allocation, customer intimation, balance payment, and Back Office handover: CHG-13
+
+- **Date / status:** 2026-11-20; confirmed by the user and implemented locally.
+- **Evidence / authority:** user confirmed real-world dealership process: (1) SM enters VIN / Chassis number to allocate vehicle; (2) SO calls customer to announce allocation and request full balance payment; (3) Customer remits balance payment; (4) Cashier verifies funds and issues official balance receipt; (5) Only then does SM hand over file to Back Office for fulfillment (PDI, VAHAN, Invoicing).
+- **Before / after:**
+  - Expanded booking states to include `allocated` (`check(state in ('draft','tl_review','sm_review','allocated','bo_review'))`).
+  - Stored procedure `allocate_vehicle_sm`: SM records VIN/Chassis allocation; booking moves to `allocated`.
+  - Stored procedure `record_customer_intimation`: SO logs customer call notes and payment arrangement.
+  - Stored procedure `record_booking_payment`: supports `payment_type = 'balance_payment'` with proof slip.
+  - Cashier verification: Cashier verifies balance payment and issues official receipt.
+  - Stored procedure `handover_to_bo_sm`: SM hands over to Back Office (`bo_review`), strictly gated on Cashier-verified balance payment. Initializes `bo_preparations` desk.
+- **Trace / dependencies:** R-01, R-05, R-08, R-11; D-14, D-17, Q-05. Total 367 automated database checks and full Next.js application build verified.
+

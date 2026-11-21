@@ -3,6 +3,39 @@
   margin: 0 auto;
 }
 
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  margin-bottom: 18px;
+}
+.backLink:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+.viewAllBtn {
+  display: inline-block;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  text-decoration: none;
+  transition: all 0.12s ease;
+}
+.viewAllBtn:hover {
+  color: var(--ink);
+  border-color: #9daeb9;
+  background: #fcfdfe;
+}
+
 .header {
   display: flex;
   align-items: flex-start;
@@ -48,61 +81,73 @@
   justify-content: space-between;
   padding: 18px 20px;
   min-height: 140px;
-  background: #ffffff;
-  border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   text-decoration: none;
   color: var(--ink);
-  transition: border-color 0.12s ease, background-color 0.12s ease;
-}
-
-.card:hover {
-  border-color: #9daeb9;
-  background: #fcfdfe;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .cardActive {
   border-color: var(--ink) !important;
-  box-shadow: 0 0 0 1px var(--ink);
-  background: #fcfdfe;
+  box-shadow: 0 0 0 2px var(--ink);
 }
 
-/* Subtle enterprise accent per payment method */
+/* Subtle full card background color with on-hover darkening */
 .card_card {
-  border-left: 3px solid #3b82f6;
+  background: #f1f5fa;
+  border: 1px solid #d4e2f4;
+}
+.card_card:hover {
+  background: #e3effa;
+  border-color: #bcd5f5;
 }
 .card_card .iconWrap {
-  background: #f8fafc;
+  background: #e0ecfa;
   color: #1e3a8a;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #c7ddf8;
 }
 
 .card_upi {
-  border-left: 3px solid #6366f1;
+  background: #f4f3fb;
+  border: 1px solid #dedbf7;
+}
+.card_upi:hover {
+  background: #e8e5f8;
+  border-color: #cac5f3;
 }
 .card_upi .iconWrap {
-  background: #faf5ff;
+  background: #e6e3f8;
   color: #4338ca;
-  border: 1px solid #ede9fe;
+  border: 1px solid #d5d0f6;
 }
 
 .card_cheque {
-  border-left: 3px solid #d97706;
+  background: #fbf8f0;
+  border: 1px solid #f6eccf;
+}
+.card_cheque:hover {
+  background: #f4edda;
+  border-color: #eddcb1;
 }
 .card_cheque .iconWrap {
-  background: #fffbeb;
+  background: #f5eccf;
   color: #92400e;
-  border: 1px solid #fef3c7;
+  border: 1px solid #eedda6;
 }
 
 .card_cash {
-  border-left: 3px solid #16a34a;
+  background: #f1f8f3;
+  border: 1px solid #d4ecdc;
+}
+.card_cash:hover {
+  background: #e1f2e7;
+  border-color: #bce3cb;
 }
 .card_cash .iconWrap {
-  background: #f0fdf4;
+  background: #dbf0e1;
   color: #166534;
-  border: 1px solid #dcfce7;
+  border: 1px solid #bde6cb;
 }
 
 .cardTop {
@@ -118,7 +163,7 @@
   justify-content: center;
   width: 36px;
   height: 36px;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
 .iconWrap svg {
@@ -126,7 +171,7 @@
   height: 18px;
 }
 
-/* Notification Ball & Badge */
+/* Vibrant Notification Ball & Badge */
 .badgeWrap {
   display: flex;
   align-items: center;
@@ -134,38 +179,40 @@
 }
 
 .ball {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  background: var(--red);
+  background: #ffffff;
   display: inline-block;
   flex-shrink: 0;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.9);
 }
 
 .countBadge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 8px;
-  border-radius: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
   font-size: 11px;
-  font-weight: 600;
-  background: #fff1f2;
-  color: #991b1b;
-  border: 1px solid #fecdd3;
-  letter-spacing: 0.02em;
+  font-weight: 750;
+  background: #e11d48;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.4);
 }
 
 .countBadgeClear {
   display: inline-flex;
   align-items: center;
-  padding: 3px 8px;
-  border-radius: 4px;
+  padding: 3px 9px;
+  border-radius: 20px;
   font-size: 11px;
-  font-weight: 500;
-  background: #f4f5f6;
+  font-weight: 600;
+  background: rgba(0, 0, 0, 0.05);
   color: var(--muted);
-  border: 1px solid var(--line);
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .cardTitle {

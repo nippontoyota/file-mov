@@ -23,6 +23,7 @@ try {
   const so = await login('so2@example.test');
   const tl = await login('tl3@example.test');
   const sm = await login('sm4@example.test');
+  const cashier = await login('cashier8@example.test');
   const other = await login('so13@example.test');
   const admin = await login('admin1@example.test');
   const bo = await login('bo5@example.test');
@@ -82,6 +83,39 @@ try {
   // TL receives
   ok(await tl.rpc('receive_sales_file', { p_booking: id, p_revision: revision }));
 
+  // Non-TL cannot return file
+  check((await so.rpc('return_booking_tl', { p_operation: randomUUID(), p_booking: id, p_revision: revision, p_reason: 'Return reason' })).error?.code === '42501', 'Non-TL cannot return file');
+
+  // Return requires valid reason
+  check((await tl.rpc('return_booking_tl', { p_operation: randomUUID(), p_booking: id, p_revision: revision, p_reason: '  ' })).error?.code === '22023', 'Blank return reason rejected');
+
+  // Stale revision for return rejected
+  check((await tl.rpc('return_booking_tl', { p_operation: randomUUID(), p_booking: id, p_revision: revision - 1, p_reason: 'Valid reason' })).error?.code === '40001', 'Stale revision for return rejected');
+
+  // TL returns file to SO for correction
+  const returnOp = randomUUID();
+  const returnReason = 'Customer PAN card scan is blurry. Please re-upload a clear copy.';
+  const returnedId = ok(await tl.rpc('return_booking_tl', { p_operation: returnOp, p_booking: id, p_revision: revision, p_reason: returnReason }));
+  check(returnedId === id, 'TL successfully returned file to SO');
+  revision++;
+
+  // Verify booking reverted to draft
+  const draftState = ok(await so.from('bookings').select('state, revision').eq('id', id).single());
+  check(draftState.state === 'draft', 'File reverted to draft state');
+  check(draftState.revision === revision, 'Revision incremented on return');
+
+  // Verify return audit event
+  const returnAudit = (await pool.query("select * from public.audit_events where target_id=$1 and action='booking.returned_by_tl'", [id])).rows;
+  check(returnAudit.length === 1 && returnAudit[0].reason === returnReason, 'Return audit event logged with reason');
+
+  // SO re-submits file to TL
+  ok(await so.rpc('send_booking_to_tl', { p_operation: randomUUID(), p_booking: id, p_revision: revision }));
+  revision++;
+  check(ok(await so.from('bookings').select('state').eq('id', id).single()).state === 'tl_review', 'File re-submitted to tl_review');
+
+  // TL receives again
+  ok(await tl.rpc('receive_sales_file', { p_booking: id, p_revision: revision }));
+
   // Non-TL cannot approve
   for (const c of [so, sm, other, admin, bo, client()]) {
     check((await c.rpc('approve_booking_tl', { p_operation: randomUUID(), p_booking: id, p_revision: revision })).error?.code === '42501', 'Non-TL cannot approve TL step');
@@ -105,24 +139,87 @@ try {
   const subEvidence = ok(await sm.from('sales_submissions').select('*').eq('booking_id', id).single());
   check(subEvidence.tl_approved_by !== null && subEvidence.tl_approved_at !== null && subEvidence.tl_approver_name === 'Demo TL 3', 'TL approval recorded in submission record');
 
-  // SM step: Non-SM cannot approve
+  // SM step: Non-SM cannot allocate
   for (const c of [so, tl, other, admin, bo, client()]) {
-    check((await c.rpc('approve_booking_sm', { p_operation: randomUUID(), p_booking: id, p_revision: revision, p_allocation_ref: 'MBJ11ZX2026TEST' })).error?.code === '42501', 'Non-SM cannot approve SM step');
+    check((await c.rpc('allocate_vehicle_sm', { p_operation: randomUUID(), p_booking: id, p_revision: revision, p_allocation_ref: 'MBJ11ZX2026TEST' })).error?.code === '42501', 'Non-SM cannot allocate vehicle');
   }
 
   // Empty allocation rejected
-  check((await sm.rpc('approve_booking_sm', { p_operation: randomUUID(), p_booking: id, p_revision: revision, p_allocation_ref: '   ' })).error?.code === '22023', 'Empty allocation rejected');
+  check((await sm.rpc('allocate_vehicle_sm', { p_operation: randomUUID(), p_booking: id, p_revision: revision, p_allocation_ref: '   ' })).error?.code === '22023', 'Empty allocation rejected');
 
   // Stale revision rejected
-  check((await sm.rpc('approve_booking_sm', { p_operation: randomUUID(), p_booking: id, p_revision: revision - 1, p_allocation_ref: 'MBJ11ZX2026TEST' })).error?.code === '40001', 'Stale SM approval rejected');
+  check((await sm.rpc('allocate_vehicle_sm', { p_operation: randomUUID(), p_booking: id, p_revision: revision - 1, p_allocation_ref: 'MBJ11ZX2026TEST' })).error?.code === '40001', 'Stale allocation rejected');
 
-  // Valid SM approval
+  // Valid SM allocation
   const smOp = randomUUID();
-  ok(await sm.rpc('approve_booking_sm', { p_operation: smOp, p_booking: id, p_revision: revision, p_allocation_ref: 'MBJ11ZX2026TEST' }));
+  ok(await sm.rpc('allocate_vehicle_sm', { p_operation: smOp, p_booking: id, p_revision: revision, p_allocation_ref: 'MBJ11ZX2026TEST' }));
   revision++;
 
   // SM retry deduplication
-  check(ok(await sm.rpc('approve_booking_sm', { p_operation: smOp, p_booking: id, p_revision: revision - 1, p_allocation_ref: 'MBJ11ZX2026TEST' })) === id, 'SM approval retry is idempotent');
+  check(ok(await sm.rpc('allocate_vehicle_sm', { p_operation: smOp, p_booking: id, p_revision: revision - 1, p_allocation_ref: 'MBJ11ZX2026TEST' })) === id, 'SM allocation retry is idempotent');
+
+  // State is now 'allocated'
+  const allocState = ok(await sm.from('bookings').select('state, revision').eq('id', id).single());
+  check(allocState.state === 'allocated', 'File transitions to allocated state');
+
+  // Step 2: SO Customer Intimation Call
+  // Non-SO cannot record customer intimation
+  check((await other.rpc('record_customer_intimation', { p_operation: randomUUID(), p_booking: id, p_revision: revision, p_notes: 'Customer contacted' })).error?.code === '42501', 'Unauthorized user cannot record intimation');
+
+  // Blank notes rejected
+  check((await so.rpc('record_customer_intimation', { p_operation: randomUUID(), p_booking: id, p_revision: revision, p_notes: '   ' })).error?.code === '22023', 'Blank intimation notes rejected');
+
+  // SO records customer intimation
+  const intimationNotes = 'Called customer. Informed of VIN allocation. Customer transferring full amount via RTGS.';
+  ok(await so.rpc('record_customer_intimation', { p_operation: randomUUID(), p_booking: id, p_revision: revision, p_notes: intimationNotes }));
+  revision++;
+
+  // Step 3: Vehicle Balance Payment & Cashier Verification
+  // Cannot hand over to BO before balance payment is verified
+  check((await sm.rpc('handover_to_bo_sm', { p_operation: randomUUID(), p_booking: id, p_revision: revision })).error?.code === '22023', 'Cannot hand over to BO without balance payment');
+
+  // SO records balance payment without proof
+  const unverifiedPayId = ok(await so.rpc('record_booking_payment', {
+    p_operation: randomUUID(),
+    p_booking: id,
+    p_amount: 1850000,
+    p_method: 'upi',
+    p_reference: 'RTGS-982189201',
+    p_payment_type: 'balance_payment',
+  }));
+
+  // Cashier cannot verify without proof slip attached
+  check((await cashier.rpc('verify_booking_payment', {
+    p_operation: randomUUID(),
+    p_payment_id: unverifiedPayId,
+    p_receipt_no: 'RCP-BAL-00921',
+  })).error?.code === '22023', 'Cashier verification rejected when proof is missing');
+
+  // Upload proof document
+  const payDocId = ok(await so.rpc('reserve_booking_document', {
+    p_operation: randomUUID(), p_booking: id, p_revision: revision,
+    p_kind: 'payment_receipt', p_filename: 'balance_receipt.pdf', p_mime: 'application/pdf',
+    p_size: pdf.length, p_sha256: hash,
+  }));
+  ok(await so.storage.from('booking-documents').upload(payDocId, pdf, { contentType: 'application/pdf' }));
+  ok(await so.rpc('finalize_booking_document', { p_document: payDocId, p_revision: revision, p_attestation: proof(payDocId) }));
+  revision++;
+
+  // Cashier verifies with attached proof slip
+  ok(await cashier.rpc('verify_booking_payment', {
+    p_operation: randomUUID(),
+    p_payment_id: unverifiedPayId,
+    p_receipt_no: 'RCP-BAL-00921',
+    p_proof_document: payDocId,
+  }));
+
+  // Step 4: SM Hands Over to Back Office
+  const handoverOp = randomUUID();
+  ok(await sm.rpc('handover_to_bo_sm', { p_operation: handoverOp, p_booking: id, p_revision: revision }));
+  revision++;
+
+  // SM handover retry deduplication
+  check(ok(await sm.rpc('handover_to_bo_sm', { p_operation: handoverOp, p_booking: id, p_revision: revision - 1 })) === id, 'SM handover retry is idempotent');
 
   // State is now bo_review
   const boState = ok(await sm.from('bookings').select('state, revision').eq('id', id).single());

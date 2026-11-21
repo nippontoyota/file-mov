@@ -289,14 +289,14 @@ isOneToOne: false
                   ]
                 },"sales_submissions": {
                   Row: {
-                    "allocation_ref": string | null,"booking_id": string,"file_revision": number,"received_at": string | null,"received_by": string | null,"receiver_name": string | null,"requirements_version": number,"sender_name": string,"sent_at": string,"sent_by": string,"sm_approved_at": string | null,"sm_approved_by": string | null,"sm_approver_name": string | null,"tl_approved_at": string | null,"tl_approved_by": string | null,"tl_approver_name": string | null
+                    "allocated_at": string | null,"allocated_by": string | null,"allocator_name": string | null,"allocation_ref": string | null,"booking_id": string,"customer_intimated_at": string | null,"customer_intimated_by": string | null,"customer_intimation_notes": string | null,"file_revision": number,"received_at": string | null,"received_by": string | null,"receiver_name": string | null,"requirements_version": number,"sender_name": string,"sent_at": string,"sent_by": string,"sm_approved_at": string | null,"sm_approved_by": string | null,"sm_approver_name": string | null,"tl_approved_at": string | null,"tl_approved_by": string | null,"tl_approver_name": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "allocation_ref"?: string | null,"booking_id": string,"file_revision": number,"received_at"?: string | null,"received_by"?: string | null,"receiver_name"?: string | null,"requirements_version"?: number,"sender_name": string,"sent_at"?: string,"sent_by": string,"sm_approved_at"?: string | null,"sm_approved_by"?: string | null,"sm_approver_name"?: string | null,"tl_approved_at"?: string | null,"tl_approved_by"?: string | null,"tl_approver_name"?: string | null
+                    "allocated_at"?: string | null,"allocated_by"?: string | null,"allocator_name"?: string | null,"allocation_ref"?: string | null,"booking_id": string,"customer_intimated_at"?: string | null,"customer_intimated_by"?: string | null,"customer_intimation_notes"?: string | null,"file_revision": number,"received_at"?: string | null,"received_by"?: string | null,"receiver_name"?: string | null,"requirements_version"?: number,"sender_name": string,"sent_at"?: string,"sent_by": string,"sm_approved_at"?: string | null,"sm_approved_by"?: string | null,"sm_approver_name"?: string | null,"tl_approved_at"?: string | null,"tl_approved_by"?: string | null,"tl_approver_name"?: string | null
                   }
                   Update: {
-                    "allocation_ref"?: string | null,"booking_id"?: string,"file_revision"?: number,"received_at"?: string | null,"received_by"?: string | null,"receiver_name"?: string | null,"requirements_version"?: number,"sender_name"?: string,"sent_at"?: string,"sent_by"?: string,"sm_approved_at"?: string | null,"sm_approved_by"?: string | null,"sm_approver_name"?: string | null,"tl_approved_at"?: string | null,"tl_approved_by"?: string | null,"tl_approver_name"?: string | null
+                    "allocated_at"?: string | null,"allocated_by"?: string | null,"allocator_name"?: string | null,"allocation_ref"?: string | null,"booking_id"?: string,"customer_intimated_at"?: string | null,"customer_intimated_by"?: string | null,"customer_intimation_notes"?: string | null,"file_revision"?: number,"received_at"?: string | null,"received_by"?: string | null,"receiver_name"?: string | null,"requirements_version"?: number,"sender_name"?: string,"sent_at"?: string,"sent_by"?: string,"sm_approved_at"?: string | null,"sm_approved_by"?: string | null,"sm_approver_name"?: string | null,"tl_approved_at"?: string | null,"tl_approved_by"?: string | null,"tl_approver_name"?: string | null
                   }
                   Relationships: [
                     {
@@ -418,6 +418,9 @@ isOneToOne: false
             "accept_staff_invitation":
 { Args: { "p_invitation": string }; Returns: string
                            },
+"allocate_vehicle_sm":
+{ Args: { "p_allocation_ref": string,"p_booking": string,"p_operation": string,"p_revision": number }; Returns: string
+                           },
 "approve_booking_sm":
 { Args: { "p_allocation_ref": string,"p_booking": string,"p_operation": string,"p_revision": number }; Returns: string
                            },
@@ -439,6 +442,9 @@ isOneToOne: false
 "finalize_booking_document":
 { Args: { "p_attestation": string,"p_document": string,"p_revision": number }; Returns: string
                            },
+"handover_to_bo_sm":
+{ Args: { "p_booking": string,"p_operation": string,"p_revision": number }; Returns: string
+                           },
 "receive_sales_file":
 { Args: { "p_booking": string,"p_revision": number }; Returns: string
                            },
@@ -449,13 +455,19 @@ isOneToOne: false
 { Args: { "p_booking": string,"p_disclaimer_signed": boolean,"p_form20_signed": boolean,"p_operation": string,"p_revision": number,"p_vahan_app_no": string }; Returns: string
                            },
 "record_booking_payment":
-{ Args: { "p_amount": number,"p_booking": string,"p_method": string,"p_operation": string,"p_proof_document"?: string,"p_reference": string }; Returns: string
+{ Args: { "p_amount": number,"p_booking": string,"p_method": string,"p_operation": string,"p_payment_type"?: string,"p_proof_document"?: string,"p_reference": string }; Returns: string
+                           },
+"record_customer_intimation":
+{ Args: { "p_booking": string,"p_notes": string,"p_operation": string,"p_revision": number }; Returns: string
                            },
 "record_document_download":
 { Args: { "p_document": string }; Returns: string
                            },
 "reserve_booking_document":
 { Args: { "p_booking": string,"p_filename": string,"p_kind": string,"p_mime": string,"p_operation": string,"p_revision": number,"p_sha256": string,"p_size": number }; Returns: string
+                           },
+"return_booking_tl":
+{ Args: { "p_booking": string,"p_operation": string,"p_reason": string,"p_revision": number }; Returns: string
                            },
 "save_booking_draft":
 { Args: { "p_booking"?: string,"p_confirmed": boolean,"p_data": Json,"p_membership": string,"p_operation": string,"p_revision"?: number }; Returns: string

@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { BookingDocuments } from '@/components/bookings/documents';
 import { ActionForm } from '@/components/action-form';
-import { sendToTL, receiveFile, approveTL, approveSM, recordBOPdi, recordBOVahanAndStatutory, dispatchBODepartment } from '@/modules/bookings/actions';
+import { sendToTL, receiveFile, approveTL, returnToSO, allocateVehicleSM, recordIntimation, handoverToBO, recordBOPdi, recordBOVahanAndStatutory, dispatchBODepartment } from '@/modules/bookings/actions';
 import { recordPayment } from '@/modules/cashier/actions';
 import { requiredBookingFields } from '@/modules/bookings/documents';
 import Link from 'next/link';
@@ -11,6 +11,7 @@ import { bookingData } from '@/modules/bookings/fields';
 import { uuid } from '@/lib/errors';
 import { WorkspaceShell } from '@/components/workspace/shell';
 import { DraftEditor } from '@/components/bookings/draft-editor';
+import { DocumentPreviewModal } from '@/components/document-preview-modal';
 import styles from '@/components/bookings/booking.module.css';
 
 export default async function Booking({params,searchParams}:{params:Promise<{id:string}>;searchParams:Promise<{saved?:string}>}) {
@@ -29,8 +30,24 @@ export default async function Booking({params,searchParams}:{params:Promise<{id:
   const submission=await session.client.from('sales_submissions').select('*').eq('booking_id',id).maybeSingle();
   const prepResult=await session.client.from('bo_preparations').select('*').eq('booking_id',id).maybeSingle();
   const prep=prepResult.data;
-  const payResult=await session.client.from('booking_payments').select('*').eq('booking_id',id).maybeSingle();
-  const payment=payResult.data;
+  const payResult = await session.client
+    .from('booking_payments')
+    .select('*')
+    .eq('booking_id', id)
+    .order('created_at', { ascending: true });
+  const payments = payResult.data || [];
+  const advancePayment = payments.find(p => p.payment_type === 'booking_advance') || payments[0] || null;
+  const balancePayment = payments.find(p => p.payment_type === 'balance_payment') || null;
+  const payment = advancePayment;
+  const returnAuditResult = await session.client
+    .from('audit_events')
+    .select('reason,occurred_at')
+    .eq('target_id', id)
+    .eq('action', 'booking.returned_by_tl')
+    .order('occurred_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const latestReturn = returnAuditResult.data;
   if(docs.error || submission.error) throw new Error('File documents unavailable');
 
   const isTL=session.memberships.some(m=>m.role==='TL' && m.branch_id===b.branch_id && m.team_id===b.team_id);
@@ -40,7 +57,7 @@ export default async function Booking({params,searchParams}:{params:Promise<{id:
   const editable=Boolean(own) && b.state==='draft';
   const canReceive=isTL && b.state==='tl_review' && !submission.data?.received_at;
   const canApproveTL=isTL && b.state==='tl_review' && Boolean(submission.data?.received_at) && !submission.data?.tl_approved_at;
-  const canApproveSM=isSM && b.state==='sm_review' && Boolean(submission.data?.tl_approved_at) && !submission.data?.sm_approved_at;
+  const canAllocateSM=isSM && b.state==='sm_review' && Boolean(submission.data?.tl_approved_at);
 
   const missing=Object.entries(requiredBookingFields).filter(([key])=>!data[key as keyof typeof data]?.trim()).map(([,label])=>label);
   const saved=(await searchParams).saved==='1';
@@ -48,19 +65,30 @@ export default async function Booking({params,searchParams}:{params:Promise<{id:
   const statusLabel =
     b.state === 'draft' ? 'Draft' :
     b.state === 'tl_review' ? 'With TL' :
-    b.state === 'sm_review' ? 'With SM' :
+    b.state === 'sm_review' ? 'With SM (Allocation)' :
+    b.state === 'allocated' ? 'Vehicle Allocated (Awaiting Full Payment)' :
     b.state === 'bo_review' ? 'With Back Office' : b.state;
 
   const sectionTitle =
     b.state === 'draft' ? 'Send file to Team Leader' :
     b.state === 'tl_review' ? 'Team Leader review' :
-    b.state === 'sm_review' ? 'Sales Manager approval & allocation' :
+    b.state === 'sm_review' ? 'Sales Manager vehicle allocation' :
+    b.state === 'allocated' ? 'Vehicle Allocation & Customer Balance Payment' :
     'Approved by Sales — Back Office coordination';
 
   return <WorkspaceShell {...session} page="bookings">
     <Link href="/bookings" className={styles.back}>Back to bookings</Link>
     <div className={styles.pageHeader}><div><span className={styles.eyebrow}>Customer file / Booking details</span><h1>{data.customer_name || 'Booking file'}</h1><p><strong>Customer ID: {b.customer_id || 'Not entered'}</strong></p><p>{data.booking_number ? `Booking ${data.booking_number}` : `File ${b.id.slice(0,8)}`} · {b.branches?.name}</p></div><span className={styles.status}>{statusLabel} · v{b.revision}</span></div>
     {saved && <p role="status" className={styles.saved}>Draft saved. No approval or handover has been recorded.</p>}
+    {b.state === 'draft' && latestReturn && (
+      <div style={{ padding: '14px 18px', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: '8px', marginBottom: '20px', color: '#991b1b' }}>
+        <strong style={{ fontSize: '14px', display: 'block', marginBottom: '2px' }}>File returned by Team Leader for correction:</strong>
+        <p style={{ margin: '0', fontSize: '13px' }}>&ldquo;{latestReturn.reason}&rdquo;</p>
+        <small style={{ color: 'var(--muted)', display: 'block', marginTop: '4px' }}>
+          Returned on {new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Kolkata' }).format(new Date(latestReturn.occurred_at))}. Please update details or documents and re-submit.
+        </small>
+      </div>
+    )}
     {!editable && <p className={styles.note}>Read-only file. Submitted details and document versions are preserved together.</p>}
     <DraftEditor suggestions={await bookingSuggestions(session.client)} key={b.revision} data={data} id={id} revision={b.revision} editable={editable} soName={b.so_name} scopes={[{id:own?.id || '',label:`${b.branches?.name} / ${b.teams?.name}`}]} />
     <BookingDocuments booking={id} revision={b.revision} documents={docs.data} editable={editable} owner={{name:data.registration_name || '',address:data.registration_address || '',pin:data.registration_pin || ''}} />
@@ -88,9 +116,12 @@ export default async function Booking({params,searchParams}:{params:Promise<{id:
           </div>
           {payment.proof_document_id && (
             <div style={{ marginTop: '10px' }}>
-              <a href={`/api/booking-documents/${payment.proof_document_id}`} target="_blank" rel="noreferrer" style={{ fontSize: '13px', color: '#4338ca', fontWeight: 600, textDecoration: 'underline' }}>
-                View attached customer payment slip
-              </a>
+              <DocumentPreviewModal
+                documentId={payment.proof_document_id}
+                label="Preview customer payment slip"
+                title="Customer Booking Advance Payment Slip"
+                subtitle={`Booking ${data.booking_number || ''} · ${payment.payment_method?.toUpperCase()} payment of ₹${Number(payment.amount).toLocaleString('en-IN')}`}
+              />
             </div>
           )}
         </div>
@@ -139,27 +170,330 @@ export default async function Booking({params,searchParams}:{params:Promise<{id:
               Booking advance payment of ₹{Number(payment.amount).toLocaleString('en-IN')} is awaiting Cashier receipt verification before the file can be sent to the Team Leader.
             </div>
           )}
-          <ActionForm action={sendToTL} label="Send to TL">
-            <input type="hidden" name="operation" value={randomUUID()}/>
-            <input type="hidden" name="booking" value={id}/>
-            <input type="hidden" name="revision" value={b.revision}/>
-          </ActionForm>
+          {(() => {
+            const paymentPending = payment && payment.status !== 'verified';
+            const missingDocs = !docs.data?.some(d => d.kind === 'aadhaar' && d.status === 'ready') || !docs.data?.some(d => d.kind === 'pan' && d.status === 'ready');
+            const sendDisabled = Boolean(paymentPending) || missing.length > 0 || missingDocs;
+            const sendDisabledReason = paymentPending
+              ? `Cannot send to Team Leader: Advance payment of ₹${Number(payment.amount).toLocaleString('en-IN')} is awaiting Cashier verification and official receipt confirmation.`
+              : missing.length > 0
+              ? `Cannot send to Team Leader: Complete required booking details (${missing.join(', ')}).`
+              : missingDocs
+              ? 'Cannot send to Team Leader: Both registered-owner Aadhaar and PAN documents must be attached.'
+              : undefined;
+
+            return (
+              <ActionForm
+                action={sendToTL}
+                label="Send to TL"
+                disabled={sendDisabled}
+                disabledReason={sendDisabledReason}
+              >
+                <input type="hidden" name="operation" value={randomUUID()}/>
+                <input type="hidden" name="booking" value={id}/>
+                <input type="hidden" name="revision" value={b.revision}/>
+              </ActionForm>
+            );
+          })()}
         </>
       )}
       {submission.data && <><p>File version {submission.data.file_revision} sent by {submission.data.sender_name} to {b.teams?.name || 'the assigned team'} TL on {new Date(submission.data.sent_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})}.</p>
         <p>{submission.data.received_at ? `TL receipt recorded by ${submission.data.receiver_name} on ${new Date(submission.data.received_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})}.` : 'Awaiting TL receipt.'}</p>
         {canReceive && <ActionForm action={receiveFile} label="Acknowledge file receipt"><input type="hidden" name="booking" value={id}/><input type="hidden" name="revision" value={b.revision}/></ActionForm>}
         {submission.data.tl_approved_at && <p>TL approval recorded by {submission.data.tl_approver_name} on {new Date(submission.data.tl_approved_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})}.</p>}
-        {canApproveTL && <ActionForm action={approveTL} label="Approve file & forward to SM"><input type="hidden" name="operation" value={randomUUID()}/><input type="hidden" name="booking" value={id}/><input type="hidden" name="revision" value={b.revision}/></ActionForm>}
+        {canApproveTL && (
+          <div style={{ marginTop: '20px', padding: '20px', background: '#fafbfc', border: '1px solid var(--line)', borderRadius: '8px' }}>
+            <h3 style={{ fontSize: '17px', margin: '0 0 6px', fontWeight: 650 }}>Team Leader Verification & Decision</h3>
+            <p style={{ fontSize: '13px', color: 'var(--muted)', margin: '0 0 16px' }}>
+              Review the order parameters, verified advance payment receipt, and KYC documents before forwarding to the Sales Manager.
+            </p>
+
+            {/* Verification Summary Checklist */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '12px', marginBottom: '20px' }}>
+              <div style={{ padding: '12px 14px', background: 'white', border: '1px solid var(--line)', borderRadius: '6px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+                  Vehicle & Variant
+                </div>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ink)' }}>{data.model || 'Toyota Vehicle'}</div>
+                <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
+                  Suffix: <strong>{data.suffix_1 || 'Standard'}</strong> · Colour: <strong>{data.colour_1 || 'Not specified'}</strong>
+                </div>
+              </div>
+
+              <div style={{ padding: '12px 14px', background: 'white', border: '1px solid var(--line)', borderRadius: '6px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+                  Advance Payment Clearance
+                </div>
+                {payment ? (
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: payment.status === 'verified' ? '#166534' : '#9a3412' }}>
+                      {payment.status === 'verified' ? `✓ Receipt #${payment.receipt_no}` : 'Pending Cashier Verification'}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
+                      ₹{Number(payment.amount).toLocaleString('en-IN')} via {payment.payment_method?.toUpperCase()} ({payment.reference_no})
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '13px', color: 'var(--muted)' }}>No advance payment recorded</div>
+                )}
+              </div>
+
+              <div style={{ padding: '12px 14px', background: 'white', border: '1px solid var(--line)', borderRadius: '6px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+                  Registered Owner & Customer
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 650, color: 'var(--ink)' }}>{data.registration_name || data.customer_name || 'Customer'}</div>
+                <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
+                  Customer Code: {b.customer_id || 'Not entered'} · PIN: {data.registration_pin || data.pin || ''}
+                </div>
+              </div>
+
+              <div style={{ padding: '12px 14px', background: 'white', border: '1px solid var(--line)', borderRadius: '6px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+                  KYC & Statutory Files
+                </div>
+                <div style={{ fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {docs.data?.filter(d => ['aadhaar', 'pan'].includes(d.kind) && d.status === 'ready').map(d => (
+                    <div key={d.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontWeight: 600 }}>{d.kind === 'aadhaar' ? 'Aadhaar' : 'PAN'} (v{d.version})</span>
+                      <DocumentPreviewModal
+                        documentId={d.id}
+                        label="Preview"
+                        title={`${d.kind === 'aadhaar' ? 'Aadhaar Card' : 'PAN Card'} Preview`}
+                        subtitle={`Registered to: ${data.registration_name || 'Customer'}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Decision Controls: Approve vs Return */}
+            <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+              <ActionForm action={approveTL} label="Approve File & Forward to Sales Manager">
+                <input type="hidden" name="operation" value={randomUUID()} />
+                <input type="hidden" name="booking" value={id} />
+                <input type="hidden" name="revision" value={b.revision} />
+              </ActionForm>
+
+              <details style={{ flex: 1, minWidth: '280px', border: 'none', padding: 0 }}>
+                <summary style={{ fontSize: '13px', fontWeight: 600, color: '#9a3412', cursor: 'pointer', padding: '10px 0' }}>
+                  Need corrections? Return file to Sales Officer ▾
+                </summary>
+                <div style={{ marginTop: '8px', padding: '14px', background: '#fff7ed', border: '1px solid #ffedd5', borderRadius: '6px' }}>
+                  <ActionForm action={returnToSO} label="Return File to SO" secondary>
+                    <input type="hidden" name="operation" value={randomUUID()} />
+                    <input type="hidden" name="booking" value={id} />
+                    <input type="hidden" name="revision" value={b.revision} />
+                    <label style={{ fontSize: '12px', fontWeight: 600, color: '#9a3412', display: 'block', marginBottom: '4px' }}>
+                      Reason for return (required for SO)
+                      <textarea
+                        name="reason"
+                        required
+                        rows={3}
+                        placeholder="Specify what needs correction (e.g. Blurry PAN card scan, Suffix colour mismatch with stock, etc.)"
+                        style={{ width: '100%', padding: '6px 8px', fontSize: '13px', borderRadius: '4px', border: '1px solid #fed7aa', background: 'white' }}
+                      />
+                    </label>
+                  </ActionForm>
+                </div>
+              </details>
+            </div>
+          </div>
+        )}
         {b.state === 'tl_review' && !canApproveTL && Boolean(submission.data.received_at) && <p>Awaiting Team Leader review and approval.</p>}
-        {submission.data.sm_approved_at && <p>SM approval & vehicle allocation (<strong>VIN / Chassis: {submission.data.allocation_ref}</strong>) recorded by {submission.data.sm_approver_name} on {new Date(submission.data.sm_approved_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})}.</p>}
-        {canApproveSM && <ActionForm action={approveSM} label="Approve booking & forward to Back Office">
-          <input type="hidden" name="operation" value={randomUUID()}/><input type="hidden" name="booking" value={id}/><input type="hidden" name="revision" value={b.revision}/>
-          <label style={{display:'block',margin:'14px 0 16px',fontWeight:550,fontSize:'14px'}}>Vehicle Allocation (Chassis / VIN number)
-            <input name="allocation_ref" required placeholder="e.g. MBJ11ZX202699881" maxLength={100} style={{display:'block',width:'100%',marginTop:'6px'}}/>
-          </label>
-        </ActionForm>}
-        {b.state === 'sm_review' && !canApproveSM && <p>Awaiting Sales Manager vehicle allocation and commercial approval.</p>}
+
+        {b.state === 'sm_review' && canAllocateSM && (
+          <div style={{ marginTop: '20px', padding: '20px', background: '#fafbfc', border: '1px solid var(--line)', borderRadius: '8px' }}>
+            <h3 style={{ fontSize: '17px', margin: '0 0 6px', fontWeight: 650 }}>Sales Manager — Vehicle Allocation</h3>
+            <p style={{ fontSize: '13px', color: 'var(--muted)', margin: '0 0 16px' }}>
+              Assign the factory or stockyard Chassis / VIN number to this customer booking. Allocating will move this file to Allocated status, instructing the Sales Officer to contact the customer for full balance remittance.
+            </p>
+            <ActionForm action={allocateVehicleSM} label="Allocate Vehicle to Booking">
+              <input type="hidden" name="operation" value={randomUUID()} />
+              <input type="hidden" name="booking" value={id} />
+              <input type="hidden" name="revision" value={b.revision} />
+              <label style={{ display: 'block', margin: '10px 0 16px', fontWeight: 550, fontSize: '14px' }}>
+                Vehicle Chassis / VIN Number (from Toyota Dispatch / Yard)
+                <input
+                  name="allocation_ref"
+                  required
+                  placeholder="e.g. MBJ11ZX202699881"
+                  maxLength={100}
+                  style={{ display: 'block', width: '100%', marginTop: '6px', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--line)' }}
+                />
+              </label>
+            </ActionForm>
+          </div>
+        )}
+        {b.state === 'sm_review' && !canAllocateSM && <p>Awaiting Sales Manager vehicle allocation (Chassis / VIN number).</p>}
+
+        {b.state === 'allocated' && (
+          <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Allocation Details Card */}
+            <div style={{ padding: '16px 20px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <div>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#166534', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Vehicle Allocated
+                  </span>
+                  <div style={{ fontSize: '18px', fontWeight: 700, color: '#14532d', marginTop: '2px' }}>
+                    Chassis / VIN: {submission.data.allocation_ref}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#166534', marginTop: '4px' }}>
+                    Allocated by {submission.data.allocator_name || 'Sales Manager'} on {submission.data.allocated_at ? new Date(submission.data.allocated_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'recently'}.
+                  </div>
+                </div>
+                <span className={styles.badgePassed}>✓ Stockyard Allocated</span>
+              </div>
+            </div>
+
+            {/* Step 1: Customer Intimation Card */}
+            <div style={{ padding: '18px 20px', background: '#fafbfc', border: '1px solid var(--line)', borderRadius: '8px' }}>
+              <h3 style={{ fontSize: '15px', margin: '0 0 6px', fontWeight: 650 }}>1. Customer Allocation Call & Intimation</h3>
+              <p style={{ fontSize: '13px', color: 'var(--muted)', margin: '0 0 14px' }}>
+                The Sales Officer must call the customer ({data.customer_name || 'Customer'} at {data.contact_person || 'Phone'}) to inform them of vehicle allocation and request full balance payment remittance.
+              </p>
+              {submission.data.customer_intimated_at ? (
+                <div style={{ padding: '12px 14px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>
+                    ✓ Customer Intimated on {new Date(submission.data.customer_intimated_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#334155', marginTop: '4px' }}>
+                    &ldquo;{submission.data.customer_intimation_notes}&rdquo;
+                  </div>
+                </div>
+              ) : own ? (
+                <ActionForm action={recordIntimation} label="Record Customer Intimation Call">
+                  <input type="hidden" name="operation" value={randomUUID()} />
+                  <input type="hidden" name="booking" value={id} />
+                  <input type="hidden" name="revision" value={b.revision} />
+                  <label style={{ fontSize: '13px', fontWeight: 550, display: 'block', marginBottom: '8px' }}>
+                    Call Notes & Payment Arrangement
+                    <textarea
+                      name="notes"
+                      required
+                      rows={2}
+                      placeholder="e.g. Spoke with customer. Informed of VIN allocation. Customer transferring ₹18,50,000 balance via RTGS tomorrow."
+                      style={{ width: '100%', padding: '6px 8px', fontSize: '13px', borderRadius: '4px', border: '1px solid var(--line)', background: 'white', marginTop: '4px' }}
+                    />
+                  </label>
+                </ActionForm>
+              ) : (
+                <p style={{ fontSize: '13px', color: 'var(--muted)' }}>Awaiting Sales Officer to call customer and record intimation notes.</p>
+              )}
+            </div>
+
+            {/* Step 2: Customer Balance / Full Payment Card */}
+            <div style={{ padding: '18px 20px', background: '#fafbfc', border: '1px solid var(--line)', borderRadius: '8px' }}>
+              <h3 style={{ fontSize: '15px', margin: '0 0 6px', fontWeight: 650 }}>2. Vehicle Balance Payment & Cashier Clearance</h3>
+              <p style={{ fontSize: '13px', color: 'var(--muted)', margin: '0 0 14px' }}>
+                Full balance payment settlement (or approved bank loan disbursement) across showroom counters. Must be verified by Cashier before Back Office handover.
+              </p>
+              {balancePayment ? (
+                <div style={{ padding: '14px 16px', background: 'white', border: '1px solid var(--line)', borderRadius: '6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <div>
+                      <strong style={{ fontSize: '17px' }}>₹{Number(balancePayment.amount).toLocaleString('en-IN')}</strong>
+                      <span style={{ marginLeft: '10px', padding: '2px 8px', background: '#f1f3f5', borderRadius: '4px', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase' }}>
+                        {balancePayment.payment_method}
+                      </span>
+                      <div style={{ color: 'var(--muted)', fontSize: '12px', marginTop: '4px' }}>
+                        Ref / UTR: <strong>{balancePayment.reference_no}</strong> · Recorded {new Date(balancePayment.created_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })}
+                      </div>
+                    </div>
+                    <div>
+                      <span className={balancePayment.status === 'verified' ? styles.badgePassed : styles.badgePending}>
+                        {balancePayment.status === 'verified' ? `✓ Receipt #${balancePayment.receipt_no} Issued by Cashier` : '⏳ Awaiting Cashier Receipt Confirmation'}
+                      </span>
+                    </div>
+                  </div>
+                  {balancePayment.proof_document_id && (
+                    <div style={{ marginTop: '10px' }}>
+                      <DocumentPreviewModal
+                        documentId={balancePayment.proof_document_id}
+                        label="Preview balance payment slip"
+                        title="Vehicle Balance Payment Slip"
+                        subtitle={`Booking ${data.booking_number || ''} · ${balancePayment.payment_method?.toUpperCase()} payment of ₹${Number(balancePayment.amount).toLocaleString('en-IN')}`}
+                      />
+                    </div>
+                  )}
+                </div>
+              ) : own ? (
+                <ActionForm action={recordPayment} label="Record Balance Payment">
+                  <input type="hidden" name="operation" value={randomUUID()} />
+                  <input type="hidden" name="booking" value={id} />
+                  <input type="hidden" name="payment_type" value="balance_payment" />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '14px', marginBottom: '12px' }}>
+                    <label style={{ fontSize: '13px', fontWeight: 550 }}>Payment Mode
+                      <select name="method" required style={{ display: 'block', width: '100%', marginTop: '4px', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--line)' }}>
+                        <option value="upi">Bank Transfer / RTGS / NEFT / UPI</option>
+                        <option value="card">Card (POS Terminal)</option>
+                        <option value="cheque">Cheque / Demand Draft</option>
+                        <option value="cash">Cash (Counter Deposit)</option>
+                      </select>
+                    </label>
+                    <label style={{ fontSize: '13px', fontWeight: 550 }}>Balance Amount (₹)
+                      <input name="amount" type="number" required placeholder="e.g. 1850000" min="1" step="1" style={{ display: 'block', width: '100%', marginTop: '4px', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--line)' }} />
+                    </label>
+                    <label style={{ fontSize: '13px', fontWeight: 550 }}>Reference / UTR / Cheque No
+                      <input name="reference" required placeholder="e.g. UTR-98218928 / CHQ-0099" maxLength={100} style={{ display: 'block', width: '100%', marginTop: '4px', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--line)' }} />
+                    </label>
+                    <label style={{ fontSize: '13px', fontWeight: 550 }}>Payment Proof Slip (PDF or JPEG)
+                      <input name="proof_file" type="file" accept="application/pdf,image/jpeg,.pdf,.jpg,.jpeg" style={{ display: 'block', width: '100%', marginTop: '4px', padding: '6px 8px', borderRadius: '6px', border: '1px solid var(--line)' }} />
+                    </label>
+                  </div>
+                </ActionForm>
+              ) : (
+                <p style={{ fontSize: '13px', color: 'var(--muted)' }}>Awaiting customer balance payment remittance.</p>
+              )}
+            </div>
+
+            {/* Step 3: Sales Manager Handover to Back Office */}
+            {isSM && (
+              <div style={{ padding: '18px 20px', background: '#fafbfc', border: '1px solid var(--line)', borderRadius: '8px' }}>
+                <h3 style={{ fontSize: '15px', margin: '0 0 6px', fontWeight: 650 }}>3. Sales Manager — Hand Over to Back Office</h3>
+                <p style={{ fontSize: '13px', color: 'var(--muted)', margin: '0 0 14px' }}>
+                  Once the customer balance payment is verified by the Cashier, hand over the file to the Back Office for PDI, VAHAN registration, and departmental dispatches.
+                </p>
+                {(() => {
+                  const balanceVerified = balancePayment?.status === 'verified';
+                  const handoverReason = !balancePayment
+                    ? 'Cannot hand over to Back Office: Customer balance payment has not been recorded.'
+                    : !balanceVerified
+                    ? `Cannot hand over to Back Office: Customer balance payment of ₹${Number(balancePayment.amount).toLocaleString('en-IN')} is awaiting Cashier receipt verification.`
+                    : undefined;
+
+                  return (
+                    <ActionForm
+                      action={handoverToBO}
+                      label="Approve & Hand Over to Back Office"
+                      disabled={!balanceVerified}
+                      disabledReason={handoverReason}
+                    >
+                      <input type="hidden" name="operation" value={randomUUID()} />
+                      <input type="hidden" name="booking" value={id} />
+                      <input type="hidden" name="revision" value={b.revision} />
+                    </ActionForm>
+                  );
+                })()}
+              </div>
+            )}
+            {!isSM && (
+              <p style={{ fontSize: '13px', color: 'var(--muted)' }}>
+                {balancePayment?.status === 'verified'
+                  ? 'Balance payment verified. Awaiting Sales Manager to hand over file to Back Office.'
+                  : 'Awaiting balance payment clearance before Back Office handover.'}
+              </p>
+            )}
+          </div>
+        )}
+
+        {submission.data.sm_approved_at && (
+          <p>
+            SM approval & vehicle allocation (<strong>VIN / Chassis: {submission.data.allocation_ref}</strong>) recorded by {submission.data.sm_approver_name} on {new Date(submission.data.sm_approved_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}.
+          </p>
+        )}
         {b.state === 'bo_review' && <p>File has been approved by Sales. Back Office coordinates vehicle preparation, VAHAN staging, and departmental dispatches below.</p>}
       </>}
       {b.state==='draft' && !editable && <p>The Sales Officer has not sent this file yet.</p>}

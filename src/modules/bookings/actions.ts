@@ -1,5 +1,5 @@
 'use server';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash, createHmac } from 'node:crypto';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import type { ActionState } from '@/modules/identity/actions';
@@ -46,9 +46,95 @@ export async function createTestBooking(_: ActionState, form: FormData): Promise
   });
 
   if (result.error || !result.data) return { error: safeError(result.error) };
+  const bookingId = result.data;
+  let revision = 1;
+
+  // Automatically attach sample KYC documents and advance payment for Shiva (test)
+  const secret = process.env.DOCUMENT_VERIFICATION_SECRET;
+  if (secret) {
+    try {
+      const dummyPdf = Buffer.from(
+        '%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]>>endobj\nxref\n0 4\n0000000000 65535 f\n0000000009 00000 n\n0000000052 00000 n\n0000000101 00000 n\ntrailer<</Size 4/Root 1 0 R>>\nstartxref\n178\n%%EOF\n'
+      );
+      const hash = createHash('sha256').update(dummyPdf).digest('hex');
+
+      for (const kind of ['aadhaar', 'pan'] as const) {
+        const reserveOp = randomUUID();
+        const reserved = await client.rpc('reserve_booking_document', {
+          p_operation: reserveOp,
+          p_booking: bookingId,
+          p_revision: revision,
+          p_kind: kind,
+          p_filename: `${kind}_shiva_test.pdf`,
+          p_mime: 'application/pdf',
+          p_size: dummyPdf.length,
+          p_sha256: hash,
+        });
+
+        if (reserved.data) {
+          const docId = reserved.data;
+          await client.storage.from('booking-documents').upload(docId, dummyPdf, {
+            contentType: 'application/pdf',
+            upsert: true,
+          });
+          const attestation = createHmac('sha256', secret).update(`${docId}:${hash}`).digest('hex');
+          await client.rpc('finalize_booking_document', {
+            p_document: docId,
+            p_revision: revision,
+            p_attestation: attestation,
+          });
+          revision++;
+        }
+      }
+
+      // Attach sample payment proof slip
+      const paySlipOp = randomUUID();
+      const reservedSlip = await client.rpc('reserve_booking_document', {
+        p_operation: paySlipOp,
+        p_booking: bookingId,
+        p_revision: revision,
+        p_kind: 'payment_receipt',
+        p_filename: 'advance_payment_slip_shiva_test.pdf',
+        p_mime: 'application/pdf',
+        p_size: dummyPdf.length,
+        p_sha256: hash,
+      });
+
+      let proofDocId: string | undefined = undefined;
+      if (reservedSlip.data) {
+        proofDocId = reservedSlip.data;
+        await client.storage.from('booking-documents').upload(proofDocId, dummyPdf, {
+          contentType: 'application/pdf',
+          upsert: true,
+        });
+        const attestation = createHmac('sha256', secret).update(`${proofDocId}:${hash}`).digest('hex');
+        await client.rpc('finalize_booking_document', {
+          p_document: proofDocId,
+          p_revision: revision,
+          p_attestation: attestation,
+        });
+        revision++;
+      }
+
+      // Record initial booking advance payment (₹25,000 via UPI)
+      await client.rpc('record_booking_payment', {
+        p_operation: randomUUID(),
+        p_booking: bookingId,
+        p_amount: 25000,
+        p_method: 'upi',
+        p_reference: `UPI-NT-${Math.floor(100000 + Math.random() * 900000)}`,
+        p_payment_type: 'booking_advance',
+        p_proof_document: proofDocId,
+      });
+    } catch {
+      // Continue even if simulation attachment fails
+    }
+  }
+
   revalidatePath('/bookings');
-  revalidatePath(`/bookings/${result.data}`);
-  redirect(`/bookings/${result.data}?saved=1`);
+  revalidatePath('/cashier');
+  revalidatePath(`/bookings/${bookingId}`);
+  redirect(`/bookings/${bookingId}?saved=1`);
 }
 
 export async function sendToTL(_:ActionState,form:FormData):Promise<ActionState>{
@@ -77,6 +163,105 @@ export async function approveTL(_:ActionState,form:FormData):Promise<ActionState
  const result=await client.rpc('approve_booking_tl',{p_operation:operation,p_booking:id,p_revision:revision});
  if(result.error) return {error:safeError(result.error)};
  revalidatePath('/bookings');redirect(`/bookings/${id}`);
+}
+
+export async function returnToSO(_: ActionState, form: FormData): Promise<ActionState> {
+  const { client } = await requireStaff();
+  const id = String(form.get('booking'));
+  const operation = String(form.get('operation'));
+  const revision = Number(form.get('revision'));
+  const reason = textField(form, 'reason', 500);
+
+  if (!uuid.test(id) || !uuid.test(operation) || !Number.isSafeInteger(revision)) {
+    return { error: 'Refresh the file before returning.' };
+  }
+  if (!reason || reason.length < 3) {
+    return { error: 'Enter a clear reason for returning the file to the Sales Officer.' };
+  }
+
+  const result = await client.rpc('return_booking_tl', {
+    p_operation: operation,
+    p_booking: id,
+    p_revision: revision,
+    p_reason: reason,
+  });
+
+  if (result.error) return { error: safeError(result.error) };
+  revalidatePath('/bookings');
+  redirect(`/bookings/${id}`);
+}
+
+export async function allocateVehicleSM(_: ActionState, form: FormData): Promise<ActionState> {
+  const { client } = await requireStaff();
+  const id = String(form.get('booking'));
+  const operation = String(form.get('operation'));
+  const revision = Number(form.get('revision'));
+  const allocation = textField(form, 'allocation_ref', 100);
+
+  if (!uuid.test(id) || !uuid.test(operation) || !Number.isSafeInteger(revision)) {
+    return { error: 'Refresh the file before allocating vehicle.' };
+  }
+  if (!allocation) {
+    return { error: 'Enter the vehicle allocation reference (Chassis or VIN number).' };
+  }
+
+  const result = await client.rpc('allocate_vehicle_sm', {
+    p_operation: operation,
+    p_booking: id,
+    p_revision: revision,
+    p_allocation_ref: allocation,
+  });
+
+  if (result.error) return { error: safeError(result.error) };
+  revalidatePath('/bookings');
+  redirect(`/bookings/${id}`);
+}
+
+export async function recordIntimation(_: ActionState, form: FormData): Promise<ActionState> {
+  const { client } = await requireStaff();
+  const id = String(form.get('booking'));
+  const operation = String(form.get('operation'));
+  const revision = Number(form.get('revision'));
+  const notes = textField(form, 'notes', 1000);
+
+  if (!uuid.test(id) || !uuid.test(operation) || !Number.isSafeInteger(revision)) {
+    return { error: 'Refresh the file before saving intimation details.' };
+  }
+  if (!notes) {
+    return { error: 'Enter details of customer intimation (call discussion, payment arrangement).' };
+  }
+
+  const result = await client.rpc('record_customer_intimation', {
+    p_operation: operation,
+    p_booking: id,
+    p_revision: revision,
+    p_notes: notes,
+  });
+
+  if (result.error) return { error: safeError(result.error) };
+  revalidatePath('/bookings');
+  redirect(`/bookings/${id}`);
+}
+
+export async function handoverToBO(_: ActionState, form: FormData): Promise<ActionState> {
+  const { client } = await requireStaff();
+  const id = String(form.get('booking'));
+  const operation = String(form.get('operation'));
+  const revision = Number(form.get('revision'));
+
+  if (!uuid.test(id) || !uuid.test(operation) || !Number.isSafeInteger(revision)) {
+    return { error: 'Refresh the file before handing over to Back Office.' };
+  }
+
+  const result = await client.rpc('handover_to_bo_sm', {
+    p_operation: operation,
+    p_booking: id,
+    p_revision: revision,
+  });
+
+  if (result.error) return { error: safeError(result.error) };
+  revalidatePath('/bookings');
+  redirect(`/bookings/${id}`);
 }
 
 export async function approveSM(_:ActionState,form:FormData):Promise<ActionState>{
