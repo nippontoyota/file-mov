@@ -460,3 +460,24 @@ export async function fillDemoBOPrep(_: ActionState, form: FormData): Promise<Ac
   revalidatePath('/back-office');
   redirect(`/bookings/${id}?toast=dispatched`);
 }
+
+export async function softDeleteBooking(_: ActionState, form: FormData): Promise<ActionState> {
+  const { client } = await requireStaff();
+  const bookingId = textField(form, 'booking_id', 36);
+  const reason = textField(form, 'reason', 200) || 'Removed from workspace';
+  if (!bookingId || !uuid.test(bookingId)) {
+    return { error: 'Invalid booking identifier.' };
+  }
+
+  const result = await client.rpc('soft_delete_booking', {
+    p_booking_id: bookingId,
+    p_reason: reason,
+  });
+
+  if (result.error) {
+    return { error: safeError(result.error) };
+  }
+
+  revalidatePath('/bookings');
+  return { success: 'Booking removed from active list.' };
+}

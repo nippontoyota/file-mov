@@ -77,15 +77,12 @@ export function WorkspaceShell({ profile, memberships, page, children }: Pick<Se
     </aside>
     <aside className={styles.sidebar}>{navigation}</aside>
     <div className={styles.main}>
-      <header className={styles.topbar}>
+      <div className={styles.mobileBar}>
         <MobileNavigation>{navigation}</MobileNavigation>
-        <div className={styles.breadcrumb}><span>Nippon Toyota</span><span>/</span><strong>{page === "staff" ? "Staff access" : page === "bookings" ? "Bookings" : page === "cashier" ? "Cashier" : page === "back-office" ? "Back Office" : page === "insurance" ? "Insurance" : page === "accounts" ? "Accounts" : page === "accessories" ? "Accessories" : page === "security" ? "Security" : "Workspace"}</strong></div>
-        <span className={styles.mode}><span />Local workspace</span>
-        <span className={styles.topAvatar} title={profile.display_name}>{initials}</span>
-      </header>
+        <span className={styles.mobileBrand}>Nippon Toyota</span>
+      </div>
       <div className={styles.pageContent}>{children}</div>
       <SectionNavigation />
-      <div className={styles.footnote}>FilesDigi <span>Sales booking & fulfilment</span></div>
     </div>
   </div>;
 }

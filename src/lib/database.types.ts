@@ -332,14 +332,14 @@ isOneToOne: false
                   ]
                 },"bookings": {
                   Row: {
-                    "branch_id": string,"created_at": string,"customer_id": string | null,"data": NonNullable<Json>,"form_version": number,"id": string,"revision": number,"so_id": string,"so_name": string,"state": string,"team_id": string,"updated_at": string
+                    "branch_id": string,"created_at": string,"customer_id": string | null,"data": NonNullable<Json>,"deleted_at": string | null,"deleted_by": string | null,"deleted_reason": string | null,"form_version": number,"id": string,"revision": number,"so_id": string,"so_name": string,"state": string,"team_id": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "branch_id": string,"created_at"?: string,"customer_id"?: string | null,"data": NonNullable<Json>,"form_version"?: number,"id"?: string,"revision"?: number,"so_id": string,"so_name": string,"state"?: string,"team_id": string,"updated_at"?: string
+                    "branch_id": string,"created_at"?: string,"customer_id"?: string | null,"data": NonNullable<Json>,"deleted_at"?: string | null,"deleted_by"?: string | null,"deleted_reason"?: string | null,"form_version"?: number,"id"?: string,"revision"?: number,"so_id": string,"so_name": string,"state"?: string,"team_id": string,"updated_at"?: string
                   }
                   Update: {
-                    "branch_id"?: string,"created_at"?: string,"customer_id"?: string | null,"data"?: NonNullable<Json>,"form_version"?: number,"id"?: string,"revision"?: number,"so_id"?: string,"so_name"?: string,"state"?: string,"team_id"?: string,"updated_at"?: string
+                    "branch_id"?: string,"created_at"?: string,"customer_id"?: string | null,"data"?: NonNullable<Json>,"deleted_at"?: string | null,"deleted_by"?: string | null,"deleted_reason"?: string | null,"form_version"?: number,"id"?: string,"revision"?: number,"so_id"?: string,"so_name"?: string,"state"?: string,"team_id"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -354,6 +354,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "customers"
       referencedColumns: ["customer_id"]
+    },{
+      foreignKeyName: "bookings_deleted_by_fkey"
+      columns: ["deleted_by"]
+isOneToOne: false
+      referencedRelation: "staff"
+      referencedColumns: ["id"]
     },{
       foreignKeyName: "bookings_so_id_fkey"
       columns: ["so_id"]
@@ -784,6 +790,9 @@ isOneToOne: false
                            },
 "sign_accessories_margin":
 { Args: { "p_booking": string,"p_operation": string,"p_revision": number }; Returns: string
+                           },
+"soft_delete_booking":
+{ Args: { "p_booking_id": string,"p_reason"?: string }; Returns: Json
                            },
 "submit_accessories_to_bo":
 { Args: { "p_booking": string,"p_operation": string,"p_revision": number }; Returns: string

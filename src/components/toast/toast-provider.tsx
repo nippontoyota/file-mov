@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import type { ToastItem, ToastType } from './toast.types';
 import { toastManager, toast } from './toast-manager';
-import { CheckIcon, ErrorIcon, InfoIcon, WarningIcon, CloseIcon } from './toast-icons';
+import { SuccessIcon, ErrorIcon, InfoIcon, WarningIcon, CloseIcon } from './toast-icons';
 import { UrlToastListener } from './url-toast-listener';
 import styles from './toast.module.css';
 
@@ -98,7 +98,7 @@ function ToastItemCard({ item, onDismiss }: { item: ToastItem; onDismiss: (id: s
       onMouseLeave={() => setIsPaused(false)}
     >
       <div className={`${styles.iconWrapper} ${iconClass}`}>
-        {item.type === 'success' && <CheckIcon />}
+        {item.type === 'success' && <SuccessIcon />}
         {item.type === 'error' && <ErrorIcon />}
         {item.type === 'warning' && <WarningIcon />}
         {item.type === 'info' && <InfoIcon />}

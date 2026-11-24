@@ -1,0 +1,180 @@
+.deleteTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.deleteTrigger:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.deleteTrigger svg {
+  width: 15px;
+  height: 15px;
+}
+
+.dialog {
+  border: 0;
+  border-radius: 12px;
+  padding: 0;
+  max-width: 480px;
+  width: calc(100vw - 32px);
+  background: #ffffff;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.dialog::backdrop {
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.modalContent {
+  padding: 24px;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.dangerIconWrapper {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #fef2f2;
+  color: #dc2626;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.dangerIconWrapper svg {
+  width: 22px;
+  height: 22px;
+}
+
+.modalHeader h3 {
+  margin: 0 0 4px 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.modalHeader p {
+  margin: 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.detailsCard {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+.detailRow span {
+  color: #64748b;
+}
+
+.detailRow strong {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.complianceNotice {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 22px;
+}
+
+.complianceNotice strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #166534;
+  margin-bottom: 3px;
+}
+
+.complianceNotice p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #15803d;
+}
+
+.errorText {
+  color: #dc2626;
+  font-size: 13px;
+  margin: 0 0 14px 0;
+  padding: 8px 12px;
+  background: #fef2f2;
+  border-radius: 6px;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.cancelButton {
+  padding: 9px 16px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.cancelButton:hover {
+  background: #f1f5f9;
+}
+
+.confirmDeleteButton {
+  padding: 9px 18px;
+  border-radius: 6px;
+  border: 1px solid #dc2626;
+  background: #dc2626;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.confirmDeleteButton:hover {
+  background: #b91c1c;
+}
+
+.confirmDeleteButton:disabled,
+.cancelButton:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}

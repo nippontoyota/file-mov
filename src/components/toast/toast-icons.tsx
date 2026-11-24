@@ -1,10 +1,10 @@
 import React from 'react';
 
-export function CheckIcon({ className }: { className?: string }) {
+export function SuccessIcon({ className }: { className?: string }) {
   return (
     <svg className={className} width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-      <circle cx="10" cy="10" r="9" stroke="currentColor" strokeWidth="2" />
-      <path d="M6 10L9 13L14 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="2" />
+      <circle cx="10" cy="10" r="3.5" fill="currentColor" />
     </svg>
   );
 }

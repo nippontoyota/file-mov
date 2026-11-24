@@ -221,7 +221,7 @@ export default async function CashierPage({ searchParams }: { searchParams: Prom
                             <>
                               <div style={{ marginBottom: '6px' }}>
                                 <span className={styles.proofAttachedBadge}>
-                                  <Icon name="check" /> Slip Attached
+                                  <Icon name="document" /> Slip Attached
                                 </span>
                               </div>
                               <div style={{ marginBottom: '8px' }}>
