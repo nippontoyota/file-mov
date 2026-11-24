@@ -1,4 +1,4 @@
 import { installFixtures } from "./test-fixtures.mjs";
 const cleanup = await installFixtures();
-try { await import("./test-db.mjs"); await import("./test-admin-accounts.mjs"); await import("./test-booking-drafts.mjs"); await import("./test-booking-documents.mjs"); await import("./test-sales-approvals.mjs"); await import("./test-bo-preparation.mjs"); await import("./test-cashier-payments.mjs"); }
+try { await import("./test-db.mjs"); await import("./test-admin-accounts.mjs"); await import("./test-booking-drafts.mjs"); await import("./test-booking-documents.mjs"); await import("./test-sales-approvals.mjs"); await import("./test-bo-preparation.mjs"); await import("./test-cashier-payments.mjs"); await import("./test-insurance-workflow.mjs"); await import("./test-accounts-workflow.mjs"); await import("./test-accessories-workflow.mjs"); await import("./test-delivery-and-archive.mjs"); }
 finally { await cleanup(); }

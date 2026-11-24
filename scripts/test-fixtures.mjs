@@ -34,6 +34,10 @@ export async function installFixtures() {
         if(removed.error) throw new Error('Fixture file cleanup failed');
       }
       await sql.query("delete from public.booking_payments where branch_id=any($1::uuid[])",[fixtureBranches]);
+      await sql.query("delete from public.delivery_records where branch_id=any($1::uuid[])",[fixtureBranches]);
+      await sql.query("delete from public.accessories_records where branch_id=any($1::uuid[])",[fixtureBranches]);
+      await sql.query("delete from public.accounts_records where branch_id=any($1::uuid[])",[fixtureBranches]);
+      await sql.query("delete from public.insurance_policies where branch_id=any($1::uuid[])",[fixtureBranches]);
       await sql.query("delete from public.bo_preparations where branch_id=any($1::uuid[])",[fixtureBranches]);
       await sql.query("delete from public.sales_submissions where booking_id in (select id from public.bookings where branch_id=any($1::uuid[]))",[fixtureBranches]);
       await sql.query("delete from public.booking_documents where booking_id in (select id from public.bookings where branch_id=any($1::uuid[]))",[fixtureBranches]);

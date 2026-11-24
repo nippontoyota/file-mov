@@ -1,6 +1,7 @@
 "use client";
 import { startTransition, useActionState, useEffect, useRef, type ReactNode } from "react";
 import type { ActionState } from "@/modules/identity/actions";
+import { toast } from "@/components/toast";
 
 export function ActionForm({ action, children, label, secondary = false, disabled = false, disabledReason }: {
   action: (state: ActionState, form: FormData) => Promise<ActionState>;
@@ -10,7 +11,12 @@ export function ActionForm({ action, children, label, secondary = false, disable
   const [state, submit, pending] = useActionState(action, {});
   const formRef = useRef<HTMLFormElement>(null);
   useEffect(() => {
-    if (state.success && !state.link) formRef.current?.reset();
+    if (state.error) {
+      toast.error(state.error);
+    } else if (state.success) {
+      toast.success(state.success);
+      if (!state.link) formRef.current?.reset();
+    }
   }, [state]);
   return <form ref={formRef} action={submit} onSubmit={event => {
     if (disabled) { event.preventDefault(); return; }

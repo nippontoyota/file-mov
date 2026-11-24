@@ -1,6 +1,6 @@
 # Implementation plan and validation
 
-Documentation baseline: 2026-11-10. Current delivery: **local synthetic M1 foundation and M2 drafts, registered-owner uploads and SO-to-TL submission/receipt through CHG-08**. The documentation-only delivery (D-18) remains the historical baseline. M2 has started under CHG-03; its unresolved business prerequisites still control dependent features. M3–M6 have not started.
+Documentation baseline: 2026-11-10. Current delivery: **local synthetic M1 foundation, M2 Sales workflows, M3 Back Office, Insurance, Accounts & Registration, and M4 Accessories, Security Gate Pass, Customer Delivery Handover & Showroom Archive**. All 506 automated database and business-process checks pass; production build verified with zero errors and zero warnings. M5 (Pilot readiness and one-branch trial) is ready for deployment configuration.
 
 Read [PRD](prd.md), [workflow inventory](workflow.md), [architecture](architecture.md), and [decisions/open questions](decisions.md). [AGENTS.md](AGENTS.md) defines how agents use them.
 

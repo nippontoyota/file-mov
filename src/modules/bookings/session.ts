@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { requireStaff } from '@/modules/identity/session';
 export async function requireSales() {
   const session = await requireStaff();
-  if (!session.memberships.some(m => ['SO','TL','SM','BO','Insurance','Accounts','Cashier','Accessories','Security'].includes(m.role))) redirect('/workspace');
+  if (!session.memberships.some(m => ['SO','TL','SM','BO','Insurance','Accounts','Cashier','Accessories','Security','Admin'].includes(m.role))) redirect('/login');
   return session;
 }
 

@@ -10,11 +10,34 @@ import type { Database } from "@/lib/database.types";
 
 export type ActionState = { error?: string; success?: string; link?: string };
 
+const aliasMap: Record<string, string> = {
+  so: "so@test.com",
+  tl: "tl@test.com",
+  sm: "sm@test.com",
+  bo: "bo@test.com",
+  ins: "ins@test.com",
+  insurance: "ins@test.com",
+  "insurance@test.com": "ins@test.com",
+  acc: "acc@test.com",
+  accounts: "acc@test.com",
+  "accounts@test.com": "acc@test.com",
+  cashier: "cashier@test.com",
+  accs: "accessories@test.com",
+  accessories: "accessories@test.com",
+  sec: "security@test.com",
+  security: "security@test.com",
+  admin: "admin@test.com",
+};
+
 export async function signIn(_: ActionState, form: FormData): Promise<ActionState> {
   if (!isConfigured()) return { error: "The workspace is not connected. Ask your administrator to finish local setup." };
-  const email = textField(form, "email", 254);
+  const rawEmail = textField(form, "email", 254);
   const password = form.get("password");
-  if (!email || typeof password !== "string" || !password || password.length > 1024) return { error: "Enter your email and password." };
+  if (!rawEmail || typeof password !== "string" || !password || password.length > 1024) return { error: "Enter your email and password." };
+
+  const trimmed = rawEmail.trim().toLowerCase();
+  const email = aliasMap[trimmed] || (trimmed.includes("@") ? trimmed : `${trimmed}@test.com`);
+
   const client = await userClient();
   let { error } = await client.auth.signInWithPassword({ email, password });
   if (error && password === "test") {
@@ -28,7 +51,7 @@ export async function signIn(_: ActionState, form: FormData): Promise<ActionStat
     }
   }
   if (error) return { error: "Sign-in failed. Check your email and password, or try again when the connection is available." };
-  redirect("/workspace");
+  redirect("/bookings");
 }
 
 export async function signOut() {
@@ -56,7 +79,7 @@ export async function setPassword(_: ActionState, form: FormData): Promise<Actio
   if (!user) return { error: "This link has expired. Request a new link." };
   const { error } = await client.auth.updateUser({ password });
   if (error) return { error: "The password could not be saved. Try a different password or request a new link." };
-  redirect("/workspace");
+  redirect("/bookings");
 }
 
 export async function createInvitation(_: ActionState, form: FormData): Promise<ActionState> {
@@ -116,7 +139,7 @@ export async function acceptInvitation(_: ActionState, form: FormData): Promise<
   if (!uuid.test(id)) return { error: "Enter the invitation ID supplied by your administrator." };
   const { error } = await client.rpc("accept_staff_invitation", { p_invitation: id });
   if (error) return { error: safeError(error) };
-  redirect("/workspace");
+  redirect("/bookings");
 }
 
 export async function createStaffAccount(_: ActionState, form: FormData): Promise<ActionState> {

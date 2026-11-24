@@ -42,7 +42,7 @@ export function SearchSelect({ name, label, options, defaultValue = '', value, o
           else if(event.key==='Enter' && open) {event.preventDefault();if(active>=0 && matches[active])choose(matches[active]);else if(matches.length===1)choose(matches[0]);else setOpen(false);}
           else if(event.key==='Escape' && open) {event.preventDefault();event.stopPropagation();setOpen(false);setActive(-1);}
         }} />
-      <button type="button" className={styles.toggle} aria-label={`Show options for ${label}`} tabIndex={-1} onClick={()=>{input.current?.focus();setQuery(null);setOpen(!open);setActive(-1);}}>⌄</button>
+      <button type="button" className={styles.toggle} aria-label={`Show options for ${label}`} tabIndex={-1} onClick={()=>{input.current?.focus();setQuery(null);setOpen(!open);setActive(-1);}}><svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden="true"><path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
     </div>
     {open && <div id={`${id}-list`} role="listbox" aria-label={`${label} options`} className={styles.options}>
       {matches.map((option,index)=><div key={option.value} id={`${id}-${index}`} role="option" aria-selected={selected===option.value} data-active={active===index} onMouseDown={event=>event.preventDefault()} onClick={()=>choose(option)} className={styles.option}>{option.label}</div>)}

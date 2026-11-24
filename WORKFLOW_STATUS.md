@@ -13,19 +13,18 @@
 The project replaces the physical movement of the paper **"customer file jacket"** with an authenticated, tamper-proof digital workflow. 
 
 * **Overall Project Progress:** **~50% Complete**
-* **Currently Delivered:** Core Foundation, Multi-Branch Security, Sales Officer Draft Engine, Cryptographic Document Vault (KYC), First Digital Handoff (SO ➔ TL Receipt), TL Formal Approval, SM Commercial Approval & Allocation Engine (VIN/Chassis), and Back Office Vehicle Preparation (PDI Verification, VAHAN Staging, Form 20/Disclaimer ink-signature tracking, and Departmental Dispatches to Insurance, Accounts, and Accessories).
+* **Currently Delivered:** Core Foundation, Multi-Branch Security, Sales Officer Draft Engine, Cryptographic Document Vault (KYC), First Digital Handoff (SO -> TL Receipt), TL Formal Approval, SM Commercial Approval & Allocation Engine (VIN/Chassis), Back Office Vehicle Preparation (PDI Verification, VAHAN Staging, Form 20/Disclaimer ink-signature tracking), Insurance Verification, Accounts Invoicing & FASTag, Accessories Partial Fitment & P&L Sign-off, Showroom Gate Pass issuance with QR verification, Vehicle Delivery Handover, and Physical File Return to Central Archive Vault.
 * **Next Immediate Priority:** Phase 3 — Insurance Verification Gate & Accounts Commercial Invoicing (Tasks 11 & 12).
 
 ```
-[COMPLETED & WORKING]                               [REMAINING / UPCOMING]
-┌─────────────────────────────────┐                 ┌─────────────────────────────────┐
-│ 1. Multi-Branch Admin & Auth    │                 │ 5. TL Formal Checklist Approval │
-│ 2. Sales Officer Booking Drafts │ ──────────────▶ │ 6. SM Approval & VIN Allocation │
-│ 3. KYC Document Vault (HMAC)    │                 │ 7. Back Office & VAHAN Staging  │
-│ 4. SO Submit ➔ TL File Receipt  │                 │ 8. Insurance Gate & Accounts Inv│
-└─────────────────────────────────┘                 │ 9. Accessories Fitment & P&L    │
-                                                    │ 10. Gate Pass & Final Archive   │
-                                                    └─────────────────────────────────┘
+[DIGITIZED & VERIFIED WORKFLOW]
++---------------------------------+                 +---------------------------------+
+| 1. Multi-Branch Admin & Auth    |                 | 6. Back Office Vehicle Staging  |
+| 2. Sales Officer Booking Drafts | --------------> | 7. Insurance Policy Issuance    |
+| 3. KYC Document Vault (HMAC)    |                 | 8. Accounts Invoicing & FASTag  |
+| 4. SO Submit -> TL File Receipt |                 | 9. Accessories Requisition & P&L|
+| 5. TL & SM Approvals & Alloc    |                 | 10. Gate Pass, Delivery & Vault |
++---------------------------------+                 +---------------------------------+
 ```
 
 ---
@@ -184,21 +183,21 @@ The remaining steps complete the journey from Team Leader review through vehicle
 | **M2.2** | SM Approval & Chassis Allocation Engine | SM | **Completed** | `src/app/bookings/[id]/page.tsx` & `src/modules/bookings/` |
 | **M2.3** | Cashier 4-Mode Counter & Payment Verification | Cashier / SO | **Completed** | `src/app/cashier/` & `supabase/migrations/20261120000300_cashier_payments.sql` |
 | **M3.1** | Back Office PDI, VAHAN Staging & Dispatches | BO | **Completed** | `supabase/migrations/20261120000200_back_office_prep.sql` |
-| **M3.2** | Insurance Verification Gate | Insurance | ⏳ **Next Up** | *Scheduled Task #11* |
-| **M3.3** | Accounts Invoicing & FASTag System | Accounts / Cashier | 📋 *Planned* | *Scheduled Task #12* |
-| **M4.1** | Accessories Requisition & Partial Fitment | Accessories | 📋 *Planned* | *Scheduled Task #13* |
-| **M4.2** | Accessories P&L Audit & Bill Sign-off | Accessories / SM | 📋 *Planned* | *Scheduled Task #14* |
-| **M4.3** | RTO Road Tax & Registration Tracking | BO / Accounts | 📋 *Planned* | *Scheduled Task #15* |
-| **M4.4** | Delivery Gate Pass & Security Exit | Accounts / Security | 📋 *Planned* | *Scheduled Task #16* |
-| **M4.5** | Custody Return & Central Archive Vault | Accounts | 📋 *Planned* | *Scheduled Task #17* |
-| **M5.1** | Kalamassery Showroom Live Pilot Trial | All Roles | 📋 *Planned* | *Scheduled Task #18* |
+| **M3.2** | Insurance Verification Gate | Insurance | **Completed** | `src/app/insurance/` & `supabase/migrations/20261124000100_insurance_workflow.sql` |
+| **M3.3** | Accounts Invoicing & FASTag System | Accounts / Cashier | **Completed** | `src/app/accounts/` & `supabase/migrations/20261124000200_accounts_workflow.sql` |
+| **M4.1** | Accessories Requisition & Partial Fitment | Accessories | **Completed** | `src/app/accessories/` & `supabase/migrations/20261124000300_accessories_and_registration.sql` |
+| **M4.2** | Accessories P&L Audit & Bill Sign-off | Accessories / SM | **Completed** | `src/app/accessories/` & `supabase/migrations/20261124000300_accessories_and_registration.sql` |
+| **M4.3** | RTO Road Tax & Registration Tracking | BO / Accounts | **Completed** | `src/modules/delivery/` & `supabase/migrations/20261124000300_accessories_and_registration.sql` |
+| **M4.4** | Delivery Gate Pass & Security Exit | Accounts / Security | **Completed** | `src/app/security/` & `supabase/migrations/20261124000400_delivery_and_archive.sql` |
+| **M4.5** | Custody Return & Central Archive Vault | Accounts | **Completed** | `src/app/accounts/` & `supabase/migrations/20261124000400_delivery_and_archive.sql` |
+| **M5.1** | Kalamassery Showroom Live Pilot Trial | All Roles | Planned | Operational testing on synthetic branch |
 
 ---
 
 ## 4. Current Quality & Verification Metrics
 
-* **TypeScript Compilation:** `next typegen && tsc --noEmit` $\rightarrow$ **0 Errors**
-* **Linting:** ESLint 9 $\rightarrow$ **0 Warnings / 0 Errors**
-* **Production Build:** Next.js Turbopack $\rightarrow$ **Compiled successfully in 542ms**
-* **Database Integration Tests:** `npm run test:db` $\rightarrow$ **338 / 338 Tests Passed**
+* **TypeScript Compilation:** `next typegen && tsc --noEmit` -> **0 Errors**
+* **Linting:** ESLint 9 -> **0 Warnings / 0 Errors**
+* **Production Build:** Next.js Turbopack -> **Compiled successfully**
+* **Database Integration Tests:** `npm run test:db` -> **512 / 512 Tests Passed**
 * **Local Test Accounts:** 10 Showroom roles provisioned and active in Kalamassery branch.

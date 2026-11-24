@@ -35,7 +35,7 @@ export default function Login() {
             <p>Sign in with your staff account to continue.</p>
             {!isConfigured() && <p className="notice">The workspace is being set up. Contact your administrator for access.</p>}
             <ActionForm action={signIn} label="Sign in">
-              <label>Email address<input aria-label="Email" name="email" type="email" placeholder="you@company.com" autoComplete="username" required maxLength={254} /></label>
+              <label>Account name or email<input aria-label="Account name or email" name="email" type="text" placeholder="so, tl, sm, bo, ins, acc, cashier, admin..." autoComplete="username" autoCapitalize="none" autoCorrect="off" spellCheck="false" required maxLength={254} /></label>
               <PasswordField />
               <div className={styles.recovery}><Link href="/recover">Forgot password?</Link></div>
             </ActionForm>
